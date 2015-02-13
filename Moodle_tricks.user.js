@@ -3,7 +3,7 @@
 // @namespace   http://benibela.de
 // @include     https://moodle.uni-luebeck.de/*
 // @version     1
-// @grant       none
+// @grant       GM_addStyle
 // ==/UserScript==
  
 var loc = location.toString();
@@ -28,6 +28,15 @@ switch (page) {
     for (var r = t.rows.length - 1; r >= 0 && t.rows[r].id.indexOf("user") < 0;  r--)
       FOOTER_SKIP++;
     assert(FOOTER_SKIP > 0 && FOOTER_SKIP <= 2);
+ 
+    function parseStudentPoints(cell){
+      var s = cell.firstElementChild;
+      if (!s) return -1;
+      var empty = s.textContent == "-";
+      assert (s.tagName == "SPAN");// && (empty == s.classList.contains("dimmed_text")), c+":"+empty + " '"+s.textContent + "' "+ s.className + " "+t.rows[r].textContent); 
+      if (!empty) return s.textContent * 1
+      else return -1;
+    }
 
     var header = t.rows[1];
     var count = "<TH>" + (FOOTER_SKIP == 2 ? "(Gruppen-)" : "") +  "Abgaben</TH>";
@@ -37,30 +46,106 @@ switch (page) {
       
       
       for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
-        var s = t.rows[r].cells[c].firstElementChild;
-        if (!s) continue;
-        var empty = s.textContent == "-";
-        assert (s.tagName == "SPAN");// && (empty == s.classList.contains("dimmed_text")), c+":"+empty + " '"+s.textContent + "' "+ s.className + " "+t.rows[r].textContent); 
-        if (!empty) submitted ++;
+        if (parseStudentPoints(t.rows[r].cells[c]) >= 0) 
+          submitted ++;
       }
       count += "<td>"+submitted+"</td>";
     }
-     
-    t.createTFoot().innerHTML = "<tr>"+count+"</tr>";
+    var tfoot = t.createTFoot();
+    tfoot.innerHTML = "<tr>"+count+"</tr>";
     FOOTER_SKIP += 1;  
 
     function showScores() {
-      var HEADER_COL_SKIP = 2;
-      var HEADER_COL_SKIP2 = HEADER_COL_SKIP + 1;
+      var HEADER_COL_SPAN_SKIP = 1;
+      var STUDENT_COL_SKIP = 3;
+
+      function getPointsForColumn(c){
+        return localStorage['points'+(/=([0-9]+)/.exec(header.cells[c - HEADER_COL_SPAN_SKIP].getElementsByTagName("a")[0].href)[1])]
+      }
+      function getAssignNameFromColumn(c){
+        return header.cells[c - HEADER_COL_SPAN_SKIP].getElementsByTagName("a")[0].textContent;
+      }
+      
+      //show max points
       var as = header.getElementsByTagName("a");
       for (var i = 0; i < as.length; i++) 
         if (as[i].href.contains("assign") && !localStorage['points'+(/=([0-9]+)/.exec(as[i].href)[1])]) return;       
       
-      var points = "<th colspan=\""+HEADER_COL_SKIP2+"\">Maximal Punkte</th>"
-      for (var c = HEADER_COL_SKIP; c < header.cells.length; c++){
-        points += "<td>"+localStorage['points'+(/=([0-9]+)/.exec(header.cells[c].getElementsByTagName("a")[0].href)[1])]+"</td>";
+      var points = "<th>Maximal Punkte</th>"
+      for (var c = 1; c < header.cells.length; c++){
+        if (c < STUDENT_COL_SKIP) points += "<th></td>";
+        else points += "<td>"+getPointsForColumn(c)+"</td>";
       }
-      t.createTFoot().innerHTML = "<tr>"+points+"</tr>";
+      
+      tfoot.innerHTML =  "<tr>"+points+"</tr>" + tfoot.innerHTML;
+      FOOTER_SKIP ++;
+      
+      //color students
+      for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
+        //t.rows[r].style.backgroundColor = "violet";
+        //t.rows[r].style.padding = "10px";
+        //for (var c = 0; c < STUDENT_COL_SKIP; c++){
+        //  t.rows[r].cells[c].style.backgroundColor = "transparent";
+        //}
+      }
+      var cellHeight;
+      var failed = new Array(t.rows.length);
+      var missing = new Array(t.rows.length);
+      var presentationFailed = new Array(t.rows.length);
+      for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
+        failed[r] = 0;
+        missing[r] = 0;
+        presentationFailed[r] = false;
+      }
+      for (var c = STUDENT_COL_SKIP; c < header.cells.length; c++){
+        var reqPoints = getPointsForColumn(c) / 2;
+        var name = getAssignNameFromColumn(c);
+        var presentation = false;
+        if (( /Blatt|Zettel|Sheet/i).test(name)) ;
+        else if (( /rechnet|Presented/i).test(name)) { reqPoints = 2; presentation = true; }
+        else if (( /klausur/i).test(name)) continue;
+        
+        
+        for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
+          var cell = t.rows[r].cells[c];
+          if (!cellHeight) cellHeight = cell.clientHeight - 6;
+          var scoreClass;
+          var points =  parseStudentPoints(cell);
+          if (points < 0) scoreClass = "extmissing";
+          else if (points >= reqPoints) scoreClass = "extpass";
+          else scoreClass = "extfail";
+          
+          if (scoreClass != "extpass") {
+            if (presentation) presentationFailed[r] = true;
+            else failed[r] ++;
+            if (scoreClass == "extmissing") missing[r] ++;
+          }
+          
+          if (!cell.firstElementChild) cell.innerHTML = "<span>" + cell.innerHTML + "</span>";
+          cell.firstElementChild.classList.add("extgradespan");
+          cell.firstElementChild.classList.add(scoreClass);
+        }
+        count += "<td>"+submitted+"</td>";
+      }      
+      
+      for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
+        if (missing[r] >= 4 ) t.rows[r].classList.add("extmissing");
+        else if (failed[r] > 2) t.rows[r].classList.add("extfail");
+        else if (presentationFailed[r]) t.rows[r].classList.add("extalmost");
+        else t.rows[r].classList.add("extpass");
+      }
+      
+      GM_addStyle(".extgradespan {display: inline-block; width: 100%; height: "+cellHeight+"px; text-align: center; padding-top: "+(cellHeight/3-2)+"px }" +  //vertical-align: middle
+        ".extgradespan.extpass {background-color: #55FF55}"+
+        ".extgradespan.extfail {background-color: #FF5555}"+
+        ".extgradespan.extmissing {background-color: #555555}"+
+
+        "tr.extpass td, tr.extpass th {background-color: #66FF66 !important}"+
+        "tr.extfail td, tr.extfail th {background-color: #FF6666 !important}"+
+        "tr.extmissing td, tr.extmissing th {background-color: #666666 !important}"+
+        "tr.extalmost td, tr.extalmost th {background-color: #FFFF66 !important}"
+      );      
+      
     }
     var as = header.getElementsByTagName("a");
     for (var i = 0; i < as.length; i++) 
