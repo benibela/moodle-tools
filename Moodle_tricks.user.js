@@ -18,6 +18,7 @@ String.contains = function(s) { return this.indexOf(s) >= 0; }
 
 switch (page) {
   case "/grade/report/grader/index.php": 
+    var courseid = extractId(location.href.toString());
 
     var t = document.getElementById("user-grades");
     
@@ -146,13 +147,25 @@ switch (page) {
         "tr.extalmost td, tr.extalmost th {background-color: #FFFF66 !important}"
       );      
       
+      var sumCell = header.cells[header.cells.length-1];
+      var as = sumCell.getElementsByTagName("a");
+      var changeSum = document.createElement("span");
+      changeSum.innerHTML = '<a href="/grade/edit/tree/calculation.php?courseid='+courseid+'&id='+extractId( as[as.length-1].href)+'&gpr_type=edit&gpr_plugin=tree&gpr_courseid='+courseid+'"><img src="/theme/image.php/uzl/core/1423503077/t/calc"></a>';
+      sumCell.appendChild(changeSum);
     }
-    var as = header.getElementsByTagName("a");
-    for (var i = 0; i < as.length; i++) 
-      if (as[i].href.contains("assign") && !localStorage['points'+(/=([0-9]+)/.exec(as[i].href)[1])]) 
-        getAssignMaxPoints((/=([0-9]+)/.exec(as[i].href)[1]), showScores);
+    var ths = header.getElementsByTagName("th"); 
+    for (var h = HEADER_SKIP; h < ths.length; h++) {
+      var as = ths[h].getElementsByTagName("a");
+      if (as.length < 2) continue;
+      assert(as[0].href.contains("assign") && as[1].href.contains("sortitem"));
+      localStorage["assign-id-map"+courseid+'-'+extractId(as[1].href)] = extractId(as[0].href);
+      if (as[0].href.contains("assign") && !localStorage['points'+extractId(as[0].href)]) 
+        getAssignMaxPoints(extractId(as[0].href), showScores);
+    }
     
     showScores();
+    
+    
      
     break;
     
@@ -176,6 +189,50 @@ switch (page) {
     }
     
     break;
+    
+  case "/grade/edit/tree/calculation.php":
+    var courseid = extractId(location.href.toString());
+    //var sumid = extractId( /gpr_.*/.replace(location.href.toString(), ""));
+    var idsparent = document.getElementById("idnumbers");
+    var ids = idsparent.getElementsByClassName("idnumber");
+    for (var i=0;i<ids.length;i++)
+      if (!ids[i].value) { 
+        ids[i].value = "a" + localStorage["assign-id-map"+courseid+'-'+/[0-9]+/.exec(ids[i].id)[0]];
+        ids[i].style.backgroundColor = "yellow";
+      }
+      
+    var lis = idsparent.getElementsByTagName("li");
+    var presentationId;
+    var formula = "";
+    for (var i=0;i<lis.length;i++) {
+      var name = lis[i].textContent;
+      var id = /\[\[[a-zA-Z0-9]+\]\]/.exec(name);
+      if (!id/* && name.contains("Summe") */) continue;
+      id = id[0];
+      if (( /Blatt|Zettel|Sheet/i).test(name)) {
+      } else if (( /rechnet|Presented/i).test(name)) presentationId = id;
+      else if (( /klausur/i).test(name)) continue;
+      
+      if (formula) formula += " + ";
+      formula = formula + 'min(1; floor( '+id+' / ' + ( localStorage['points'+ /[0-9]+/.exec(id)[0]] / 2 )   +  ' ))';
+    }
+    if (presentationId) formula = "("+formula+") * 100 + "+presentationId;
+    
+    formula = " = "+formula;
+    
+    var calc = document.getElementById("id_calculation");
+    var insert = document.createElement("pre");
+    insert.textContent = formula;
+    calc.parentNode.insertBefore(document.createElement("br"), calc.nextSiblingElement);
+    calc.parentNode.insertBefore(document.createTextNode("Suggested TCS formula:"), calc.nextSiblingElement);
+    calc.parentNode.insertBefore(insert, calc.nextSiblingElement);
+//    alert(presentationId);
+//    alert(formula);
+    break;
+}
+
+function extractId(href){
+  return /id=([0-9]+)$/.exec(href)[1]
 }
 
 function getAssignMaxPoints(id, callback){
@@ -188,4 +245,4 @@ function getAssignMaxPoints(id, callback){
   oReq.open("get", "https://moodle.uni-luebeck.de/course/modedit.php?update="+id, true);
   oReq.responseType = "document";
   oReq.send();
-}
+} 
