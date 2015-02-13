@@ -50,13 +50,14 @@ switch (page) {
     FOOTER_SKIP += 1;  
 
     function showScores() {
-      var HEADER_COL_SKIP = 3;
+      var HEADER_COL_SKIP = 2;
+      var HEADER_COL_SKIP2 = HEADER_COL_SKIP + 1;
       var as = header.getElementsByTagName("a");
       for (var i = 0; i < as.length; i++) 
         if (as[i].href.contains("assign") && !localStorage['points'+(/=([0-9]+)/.exec(as[i].href)[1])]) return;       
       
-      var points = "<th colspan=\""+HEADER_COL_SKIP+"\">Maximal Punkte</th>"
-      for (var c = 1 + HEADER_COL_SKIP; c < header.cells.length; c++){
+      var points = "<th colspan=\""+HEADER_COL_SKIP2+"\">Maximal Punkte</th>"
+      for (var c = HEADER_COL_SKIP; c < header.cells.length; c++){
         points += "<td>"+localStorage['points'+(/=([0-9]+)/.exec(header.cells[c].getElementsByTagName("a")[0].href)[1])]+"</td>";
       }
       t.createTFoot().innerHTML = "<tr>"+points+"</tr>";
