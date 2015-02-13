@@ -129,12 +129,23 @@ switch (page) {
         count += "<td>"+submitted+"</td>";
       }      
       
+      var countMissing = 0;
+      var countFail = 0;
+      var countPass = 0;
+      var countAlmost = 0;
+                
+      
       for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
-        if (missing[r] >= 4 ) t.rows[r].classList.add("extmissing");
-        else if (failed[r] > 2) t.rows[r].classList.add("extfail");
-        else if (presentationFailed[r]) t.rows[r].classList.add("extalmost");
-        else t.rows[r].classList.add("extpass");
+        if (missing[r] >= 4 ) { t.rows[r].classList.add("extmissing"); countMissing++; }
+        else if (failed[r] > 2) { t.rows[r].classList.add("extfail"); countFail++; }
+        else if (presentationFailed[r]) { t.rows[r].classList.add("extalmost"); countAlmost++; }
+        else { t.rows[r].classList.add("extpass"); countPass++; }
       }
+      
+      var div = document.createElement("div");
+      div.innerHTML = "Klausurzulassung: "+countPass+"<br> Beinahe: "+countAlmost+"<br> Aktive ohne Zulassung: "+countFail+ " <br> Inaktive: "+countMissing+"<br> Total: "+(countPass+countAlmost+countFail+countMissing);
+      
+      t.parentNode.appendChild(div);
       
       GM_addStyle(".extgradespan {display: inline-block; width: 100%; height: "+cellHeight+"px; text-align: center; padding-top: "+(cellHeight/3-2)+"px }" +  //vertical-align: middle
         ".extgradespan.extpass {background-color: #55FF55}"+
