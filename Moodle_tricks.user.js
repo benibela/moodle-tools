@@ -119,8 +119,9 @@ switch (page) {
           if (scoreClass != "extpass") {
             if (presentation) presentationFailed[r] = true;
             else failed[r] ++;
-            if (scoreClass == "extmissing") missing[r] ++;
           }
+          if (scoreClass == "extmissing") missing[r] ++;
+          else missing[r] = 0;
           
           if (!cell.firstElementChild) cell.innerHTML = "<span>" + cell.innerHTML + "</span>";
           cell.firstElementChild.classList.add("extgradespan");
