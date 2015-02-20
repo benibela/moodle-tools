@@ -150,7 +150,7 @@ switch (page) {
       
       GM_addStyle(".extgradespan {display: inline-block; width: 100%; height: "+cellHeight+"px; text-align: center; padding-top: "+(cellHeight/3-2)+"px }" +  //vertical-align: middle
         ".extgradespan.extpass {background-color: #55FF55}"+
-        ".extgradespan.extpasspresentation {background-color: #55FFCC}"+
+        ".extgradespan.extpasspresentation {background-color: #55FF88}"+
         ".extgradespan.extfail {background-color: #FF5555}"+
         ".extgradespan.extmissing {background-color: #555555}"+
 
