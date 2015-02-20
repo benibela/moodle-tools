@@ -113,10 +113,10 @@ switch (page) {
           var scoreClass;
           var points =  parseStudentPoints(cell);
           if (points < 0) scoreClass = "extmissing";
-          else if (points >= reqPoints) scoreClass = "extpass";
+          else if (points >= reqPoints) scoreClass = presentation ? "extpasspresentation" : "extpass";
           else scoreClass = "extfail";
           
-          if (scoreClass != "extpass") {
+          if (scoreClass.indexOf("extpass")<0) {
             if (presentation) presentationFailed[r] = true;
             else failed[r] ++;
           }
@@ -150,6 +150,7 @@ switch (page) {
       
       GM_addStyle(".extgradespan {display: inline-block; width: 100%; height: "+cellHeight+"px; text-align: center; padding-top: "+(cellHeight/3-2)+"px }" +  //vertical-align: middle
         ".extgradespan.extpass {background-color: #55FF55}"+
+        ".extgradespan.extpasspresentation {background-color: #55FFCC}"+
         ".extgradespan.extfail {background-color: #FF5555}"+
         ".extgradespan.extmissing {background-color: #555555}"+
 
