@@ -310,7 +310,12 @@ switch (page) {
         imp.textContent = "import...";
         imp.addEventListener("click", function(e){
           e.preventDefault();
-          setScores(parseExamResults(prompt("Exam results:")));
+          try {
+            setScores(parseExamResults(prompt("Exam results:")));
+          } catch (e) {
+            alert(e);
+            throw e
+          }
           return false;
         })
       }
