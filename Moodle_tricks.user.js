@@ -187,18 +187,134 @@ switch (page) {
       var edits = document.getElementsByClassName("quickgrade");
       var submitted = 0; var notSubmitted = 0;
       for (var i=0;i<edits.length;i++){
-        if (edits[i].nodeName != "INPUT") continue;
-        if (edits[i].value == "") notSubmitted ++;
-        else submitted ++;
+        if (edits[i].nodeName == "INPUT") {
+          if (edits[i].value == "") notSubmitted ++;
+          else submitted ++;
+        } else if (edits[i].nodeName == "SELECT") {
+          if (edits[i].selectedIndex == 0) notSubmitted ++;
+          else submitted ++;
+        }
       }
       
       var t = document.getElementsByClassName("generaltable")[0];
       var realRows = -1;
       for (var i=0;i<t.rows.length;i++) 
         if (!t.rows[i].classList.contains("emptyrow")) realRows++;
-      if (submitted + notSubmitted != realRows) alert("row mismatch: "+ realRows+ " users "+ submitted + " sub "+ notSubmitted + " not sub");
+      if (submitted + notSubmitted != realRows /*&& submitted + notSubmitted != 0*/) alert("row mismatch: "+ realRows+ " users "+ submitted + " sub "+ notSubmitted + " not sub");
       
       t.parentNode.parentNode.insertBefore(document.createTextNode("Bisherige Abgaben: "+submitted), t.parentNode.nextSibling);
+
+      var isExam = false;
+      var h2s = document.getElementsByTagName("h2");
+      for (var i=0;i<h2s.length;i++) 
+        if (h2s[i].textContent.toLowerCase().contains("klausur") || h2s[i].textContent.toLowerCase().contains("exam")) {
+          isExam = true;
+          break;
+        }
+
+      if (isExam) {
+        function selectOptionGrade(select, optionText){
+          for (var i=0; i<select.options.length; i++)
+            if (select.options[i].textContent.contains(optionText)) { 
+              select.selectedIndex = i; 
+              return; 
+            }
+          for (var i=0; i<select.options.length; i++)
+            if (select.options[i].textContent.contains(optionText.replace(",","."))) { 
+              select.selectedIndex = i; 
+              return; 
+            }
+           throw "Grade not found: " + optionText + " in "+select.innerHTML;
+        }
+
+        function findUser(users, data){
+          var fn = data.firstName ? data.firstName.toLowerCase() : null;
+          var ln = data.lastName ? data.lastName.toLowerCase() : null;
+          for (var i=0;i<users.length;i++){
+            var tc = users[i].textContent.toLowerCase();
+            if (fn) {
+              if (tc.indexOf(fn) < 0 &&
+                  tc.indexOf(fn.replace(/ +/g, "-")) < 0 &&
+                  tc.indexOf(fn.replace(/-/g, " ")) < 0) continue;
+            }
+            if (ln) {
+              if (tc.indexOf(ln) < 0 &&
+                  tc.indexOf(ln.replace(/ +/g, "-")) < 0 &&
+                  tc.indexOf(ln.replace(/-/g, " ")) < 0) continue;
+            }
+            return i;
+          }
+          throw "User name found: "+JSON.stringify(data);
+        }
+
+        function setScores(data){
+          var as = t.getElementsByTagName("a");
+          var users = [];
+          for (var i=0;i<as.length;i++) 
+            if (as[i].href.indexOf("user") >= 0) users.push(as[i]);
+          for (var i=0;i<data.length;i++) {
+            var row = users[findUser(users,data[i])].parentNode.parentNode;
+            var gradings = row.getElementsByClassName("quickgrade");
+            for (var j=0;j<gradings.length;j++) {
+              if (gradings[j].nodeName == "INPUT") gradings[j].value = data[i].grade;
+              else if (gradings[j].nodeName == "TEXTAREA") gradings[j].value = "Score: "+ data[i].score + " Grade: "+ data[i].grade + "\n" + "Partial scores: "+data[i].scores.join(" ");
+              else if (gradings[j].nodeName == "SELECT") selectOptionGrade(gradings[j], data[i].grade);
+            }
+          }
+          alert("Results imported for " + data.length + " students");
+        }
+
+        function parseExamResults(dump){
+          var numeric = /^[0-9,]+$/;
+          data = dump.trim().split(/[ \n\r]+/);
+          var res = [];
+          var i = 0;
+          function expectName(){ if (numeric.test(data[i])) throw ("Expected name, got: " + data[i]); }
+          function expectNumber(){ if (!numeric.test(data[i])) throw ("Expected number, got: " + data[i]); }
+          function expectOne(){ if (data[i] != "1") throw ("Expected '1', got: " + data[i]); }
+          
+          var cur = {};
+          var phase = 0;
+          var runningSum; var scoreCols; var scoreColsFirst;
+          for (i=0;i<data.length;i++){
+            var v = data[i];
+            switch (phase) {
+              case 0: expectName(); cur.lastName = v; phase++; break;
+              case 1: if (!numeric.test(data[i])) { cur.firstName = (cur.firstName ? cur.firstName + " " : "") + v; break; } else phase++;  
+              case 2: expectNumber(); cur.id = v; phase++; break;
+              case 3: expectOne(); phase++; break;
+              case 4: expectOne(); phase++; runningSum = 0; scoreCols = 0; cur.scores = []; break;
+              default: 
+                if (v.indexOf(",") >= 0) { 
+                  cur.score = cur.scores.pop();
+                  cur.grade = v; 
+                  if (cur.score * 2 != runningSum) throw "Score mismatch: " + cur.score + " <> "+(runningSum/2);
+                  if (!scoreColsFirst) scoreColsFirst = scoreCols;
+                  if (scoreColsFirst != scoreCols) throw "Score col count mismatch for: " + JSON.stringify(cur)
+                  res.push(cur);
+                  cur = {};
+                  phase = 0; 
+                  break;
+                } else { runningSum = runningSum + v * 1; cur.scores.push(v*1); scoreCols++; }
+                phase++;
+                break
+            }
+          }
+          return res
+        }
+           
+       
+        t.parentNode.parentNode.insertBefore(document.createElement("br"), t.parentNode.nextSibling);
+        var imp = document.createElement("button");
+        t.parentNode.parentNode.insertBefore(imp, t.parentNode.nextSibling);
+        imp.textContent = "import...";
+        imp.addEventListener("click", function(e){
+          e.preventDefault();
+          setScores(parseExamResults(prompt("Exam results:")));
+          return false;
+        })
+      }
+
     }
     
     break;
