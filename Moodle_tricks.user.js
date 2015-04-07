@@ -363,6 +363,47 @@ switch (page) {
 //    alert(presentationId);
 //    alert(formula);
     break;
+    
+  case "/calendar/event.php": 
+    var form = document.getElementById("mform1");
+    var btn = document.createElement("button");
+    btn.textContent = "UNIVIS Time Import";
+    btn.addEventListener("click", function(e){
+      e.preventDefault();
+      var univis = prompt("Univis time:");
+      if (!univis) return;
+      var kind = /^ *([A-Z]+)/.exec(univis)[0];
+      var datePattern = /((; *(Mo|Di|Mi|Do|Fr|Sa|So))|[0-9]+[.][0-9]+[.][0-9]+)(.*)/;
+      var timePattern = /([0-9]+):([0-9]+) *- *([0-9]+):([0-9]+)(.*)/;
+      
+      var times = [];
+      var currentDate = "?";
+      while (true) {
+        datePos = univis.search(datePattern);
+        timePos = univis.search(timePattern);
+        if (timePos < 0) break;
+        if (datePos >= 0 && datePos < timePos) {
+          var nextDate = datePattern.exec(univis);
+          currentDate = nextDate[3] ? nextDate[3] : nextDate[1];
+          univis = nextDate[4];
+        }
+        var nextTime = timePattern.exec(univis);
+        univis = nextTime[5];
+        
+        times.push([currentDate, nextTime[1], nextTime[2], nextTime[3], nextTime[4]]);
+        
+      }
+      //times: [Day, From Hour, FH Minute, To Hour, TH Minute]
+      
+      var prettyKind = {"VORL": "Vorlesung", "UE": "Übung", "SEM": "Seminar"}[kind];
+      
+      document.getElementById("id_name").value = prettyKind;
+      
+      
+      return false;
+    });
+    form.insertBefore(btn, form.firstElementChild);
+    break;
 }
 
 function extractId(href){
