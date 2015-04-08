@@ -390,7 +390,20 @@ switch (page) {
         var nextTime = timePattern.exec(univis);
         univis = nextTime[5];
         
-        times.push([currentDate, nextTime[1], nextTime[2], nextTime[3], nextTime[4]]);
+        var fh = nextTime[1] * 1;
+        var fm = nextTime[2] * 1;
+        var th = nextTime[3] * 1;
+        var tm = nextTime[4] * 1;
+        
+        if (fm == 0) { //remove c.t., no break
+          fm = 15;
+          if (th == fh + 2 && tm == 0) {
+            th -= 1;
+            tm = 45;
+          }
+        }
+        
+        times.push([currentDate, fh, fm, th, tm]);
         
       }
       //times: [Day, From Hour, FH Minute, To Hour, TH Minute]
