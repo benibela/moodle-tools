@@ -3,7 +3,7 @@
 // @namespace   http://benibela.de
 // @include     https://moodle.uni-luebeck.de/*
 // @version     1
-// @grant       GM_addStyle
+// @grant       GM_addStyle, GM_xmlhttpRequest
 // ==/UserScript==
  
 var loc = location.toString();
@@ -15,6 +15,25 @@ function assert(b, m) {
 }
 
 String.contains = function(s) { return this.indexOf(s) >= 0; }
+
+function selectOptionValue(select, value){
+  for (var i=0; i<select.options.length; i++)
+    if (select.options[i].value == value) { 
+      select.selectedIndex = i; 
+      return true; 
+    }
+  return false;
+}
+function selectOptionText(select, optionText){
+  for (var i=0; i<select.options.length; i++)
+    if (select.options[i].textContent == optionText) { 
+      select.selectedIndex = i; 
+      return true; 
+    }
+  return false;
+}
+
+
 
 switch (page) {
   case "/grade/report/grader/index.php": 
@@ -372,7 +391,7 @@ switch (page) {
       e.preventDefault();
       var univis = prompt("Univis time:");
       if (!univis) return;
-      var kind = /^ *([A-Z]+)/.exec(univis)[0];
+      var kind = /^ *([A-Z]+)/.exec(univis)[1];
       var datePattern = /((; *(Mo|Di|Mi|Do|Fr|Sa|So))|[0-9]+[.][0-9]+[.][0-9]+)(.*)/;
       var timePattern = /([0-9]+):([0-9]+) *- *([0-9]+):([0-9]+)(.*)/;
       
@@ -408,14 +427,82 @@ switch (page) {
       }
       //times: [Day, From Hour, FH Minute, To Hour, TH Minute]
       
+      function setChecked(cb, value) {
+        if (cb.checked == value) return;
+        cb.checked = value;
+        var event = new Event("change");
+        cb.dispatchEvent(event);
+      }
+      
       var prettyKind = {"VORL": "Vorlesung", "UE": "Übung", "SEM": "Seminar"}[kind];
       
       document.getElementById("id_name").value = prettyKind;
-      
+      if (times.length == 2) alert("Veranstaltungen mit mehreren Daten sind momentan nicht unterstützt. TODO: Send Form with XMLHTTPRequest");
+      for (var i=0;i < times.length; i++) {
+        var t = times[i];
+        selectOptionText(document.getElementById("id_timestart_hour"), t[1]);
+        selectOptionText(document.getElementById("id_timestart_minute"), t[2]);
+        setChecked(document.getElementById("id_duration_1"), true);
+        selectOptionText(document.getElementById("id_timedurationuntil_hour"), t[3]);
+        selectOptionText(document.getElementById("id_timedurationuntil_minute"), t[4]);
+        if (t[0].length == 2) {
+          var JSSortedDays = new Array("So","Mo","Di","Mi","Do","Fr","Sa");  
+          var neededDay = JSSortedDays.indexOf(t[0]);
+          var date = new Date(document.getElementById("id_timestart_year").value*1,document.getElementById("id_timestart_month").value*1-1,document.getElementById("id_timestart_day").value*1);
+          var curDay = date.getDay();
+          date.setDate(date.getDate() + neededDay - curDay + (neededDay < curDay ? 7 : 0) );
+          setChecked(document.getElementById("id_repeat"), true);
+          document.getElementById("id_repeats").value = "16";
+        } else {
+          var pd = /([0-9]+)[.]([0-9]+)[.]([0-9]+)/.exec(t[0]);
+          date = new Date(pd[3]*1,pd[2]-1,pd[1]*1);
+          setChecked(document.getElementById("id_repeat"), false);
+          document.getElementById("id_repeats").value = "1";
+        }
+        
+        selectOptionValue(document.getElementById("id_timestart_year"),date.getYear());
+        selectOptionValue(document.getElementById("id_timestart_month"),date.getMonth()+1);
+        selectOptionValue(document.getElementById("id_timestart_day"),date.getDate());
+        selectOptionValue(document.getElementById("id_timedurationuntil_year"),date.getYear());
+        selectOptionValue(document.getElementById("id_timedurationuntil_month"),date.getMonth()+1);
+        selectOptionValue(document.getElementById("id_timedurationuntil_day"),date.getDate());
+      }
+
       
       return false;
     });
     form.insertBefore(btn, form.firstElementChild);
+    break;
+  case "/calendar/view.php":     
+    function markHolidays() {
+      var temp = /time=([0-9]+)/.exec(loc);
+      var date =  temp ? new Date(temp[1]*1000) : new Date();
+      var year = date.getFullYear();
+      //var year = /(2[0-9]{3}) *$/.exec(document.title)[1]*1;
+      if (localStorage["stateHolidays"+year]=="0") localStorage["stateHolidays"+year] = "";
+      if (!localStorage["stateHolidays"+year]) { getStateHolidays(year, markHolidays); return; }
+      if (!localStorage["lecturesSS"+year] || !localStorage["lecturesWS"+year] || !localStorage["lecturesWS"+(year-1)]) { getLectureDates(markHolidays); return; }
+      var holidays = JSON.parse(localStorage["stateHolidays"+year]);
+      var tbody = document.getElementsByClassName("calendartable")[0].getElementsByTagName("tbody")[0];
+      function dateTD(date){
+        var date = date.getDate();
+        //tbody.rows[date % 7].
+        for (var i=0;i<tbody.rows.length;i++){
+          for (var j=0;j<tbody.rows[i].cells.length;j++){
+            if (tbody.rows[i].cells[j].textContent.trim().startsWith(date)) return tbody.rows[i].cells[j];
+          }
+        }
+        return null;
+      }
+      for (var i=0;i<holidays.length;i++) {
+        var then = new Date(holidays[i]);
+        if (then.getMonth() == date.getMonth()) {
+          dateTD(then).style.backgroundColor = "#555555";
+        }
+      }
+      
+    }
+    markHolidays();
     break;
 }
 
@@ -433,4 +520,68 @@ function getAssignMaxPoints(id, callback){
   oReq.open("get", "https://moodle.uni-luebeck.de/course/modedit.php?update="+id, true);
   oReq.responseType = "document";
   oReq.send();
-} 
+}
+ 
+function normalizeDate(date){
+  if (date.contains(".")) {
+    var temp = /([0-9]+)[.]([0-9]+)[.]([0-9]+)/.exec(date);
+    date = temp[3]+"-"+temp[2]+"-"+temp[1];
+  }
+  return date;
+}
+ 
+function getStateHolidays(year, callback){
+  var oReq = new XMLHttpRequest();
+  oReq.onload = function(){
+    //alert(this.response);
+    var response = JSON.parse(this.response);
+    var dates = [];
+    for (var i=0;i<response.length;i++) {
+      var date = normalizeDate(response[i].date);
+      dates.push(date);
+    }
+    localStorage["stateHolidays"+year] = JSON.stringify(dates);
+    console.log("stateHolidays"+year + "=>"+localStorage["stateHolidays"+year]);
+    callback();
+  };
+  oReq.open("get", "https://sec.ipty.de/feiertag/api.php?do=getFeiertage&loc=SH&jahr="+year, true);
+  oReq.send();
+}
+
+function getLectureDates(callback){
+//alert(GM_xmlhttpRequest ? 1 : 2);
+  var ret = GM_xmlhttpRequest({
+  "onload": function(){
+  alert("xy");
+   /* var list = this.responseXML.getElementsByClassName("bodytext");
+    alert(list);
+    var lastWinter;
+    for (var i=0;i<list.length;i++) {
+      var cur = list[i].textContent.trim();
+      alert(cur);
+      var dateRange = /([0-9.]+) *- *([0-9.]+) *$/.exec(cur);
+      if (!dateRange) continue;
+      var from = normalizeDate(dateRange[1]);
+      var to = normalizeDate(dateRange[1]);
+      var range = {"from": from, "to": to};
+      var year = (new Date(from)).getFullYear();
+      
+      if (cur.startsWith("Sommersemester")) localStorage["lecturesSS"+year] = JSON.stringify(range);
+      else if (cur.startsWith("Wintersemester")) {
+        localStorage["lecturesWS"+year] = JSON.stringify(range);
+        lastWinter = "lecturesWS"+year;
+      } else if (cur.startsWith("Weihnachtsfrei") && lastWinter) {
+        var temp = JSON.parse(localStorage[lastWinter]);
+        temp.xmas = range;
+        localStorage[lastWinter] = JSON.stringify(temp);
+      }
+    }
+    callback();
+    */
+  },
+  "method": "GET",
+  "url": "https://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html",
+  "responseType": "document"
+  });
+  alert(ret);
+}
