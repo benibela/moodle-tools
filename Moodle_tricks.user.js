@@ -400,6 +400,8 @@ switch (page) {
     break;
     
   case "/calendar/event.php": 
+alert("omg");
+    setTimeout(function(){alert("fy");
     var form = document.getElementById("mform1");
     var btn = document.createElement("button");
     btn.textContent = "UNIVIS Time Import";
@@ -487,7 +489,7 @@ switch (page) {
       
       return false;
     });
-    form.insertBefore(btn, form.firstElementChild);
+    form.insertBefore(btn, form.firstElementChild);}, 1500);
     break;
   case "/calendar/view.php":     
     function markHolidays() {
@@ -546,7 +548,7 @@ switch (page) {
 
             var isInLectureTime = ss.contains(date) || ws.contains(date) || lastws.contains(date);
             if (!isInLectureTime) {
-              cell.style.backgroundColor = "#AAAAAA";
+              //cell.style.backgroundColor = "#AAAAAA";
               cell.classList.add("lecture-free");
             }
 
@@ -555,11 +557,15 @@ switch (page) {
             for (var k=0;k<holidays.length;k++) 
               if (holidays[k].getMonth() == date.getMonth() && holidays[k].getDate() == date.getDate() ) isHoliday = true;
             if (isHoliday) {
-              cell.style.backgroundColor = "#555555";
+              //cell.style.backgroundColor = "#555555";
               cell.classList.add("holiday");
             }
           }
         }
+        GM_addStyle(".lecture-free {background-color: #AAAAAA }" +
+                    ".holiday {background-color: #555555 }" );
+        //add again moodle default styles to prioritize it
+        GM_addStyle(".calendar_event_course{background-color:#ffd3bd} .calendar_event_global{background-color:#d6f8cd} .calendar_event_group{background-color:#fee7ae}.calendar_event_user{	background-color:#dce7ec}"); 
         
         /*function dateTD(date){
           var date = date.getDate();
