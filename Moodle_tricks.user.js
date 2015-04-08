@@ -40,7 +40,16 @@ function selectOptionText(select, optionText){
   return false;
 }
 
-
+function makeButton(text, onclick) {
+    var btn = document.createElement("button");
+    btn.textContent = text;
+    btn.addEventListener("click", function(e){
+      e.preventDefault();
+      onclick(e);
+      return false;
+    });
+    return btn;
+}
 
 switch (page) {
   case "/grade/report/grader/index.php": 
@@ -499,9 +508,11 @@ switch (page) {
         function getParsedLectureDate(y) { 
           var temp = JSON.parse(getLectureDate(y));
           temp.from = new Date(temp.from);
+          temp.from.setHours(0,0,0,0);
           temp.to = new Date(temp.to);
           if (temp.xmas) {
             temp.xmas.from = new Date(temp.xmas.from);
+            temp.xmas.from.setHours(0,0,0,0);
             temp.xmas.to = new Date(temp.xmas.to);
           }
           temp.contains = function(date){
@@ -536,6 +547,7 @@ switch (page) {
             var isInLectureTime = ss.contains(date) || ws.contains(date) || lastws.contains(date);
             if (!isInLectureTime) {
               cell.style.backgroundColor = "#AAAAAA";
+              cell.classList.add("lecture-free");
             }
 
             //if (day < 3) alert(date);
@@ -544,6 +556,7 @@ switch (page) {
               if (holidays[k].getMonth() == date.getMonth() && holidays[k].getDate() == date.getDate() ) isHoliday = true;
             if (isHoliday) {
               cell.style.backgroundColor = "#555555";
+              cell.classList.add("holiday");
             }
           }
         }
@@ -566,7 +579,81 @@ switch (page) {
         }*/
       }
     }
+    function removeFromHolidays(){
+      if (!localStorage["deletionInProgress"]) return;
+      var tables = document.getElementsByClassName("calendartable");
+      //for (var ti=0;ti<tables.length;ti++) {
+      var ti = 0;
+      var table = tables[ti];
+      var tbody = table.getElementsByTagName("tbody")[0];
+ 
+      var hasLinks = false;
+ 
+      urls = JSON.parse(localStorage["urlsToDelete"]);
+ 
+      for (var i=0;i<tbody.rows.length;i++){
+        for (var j=0;j<tbody.rows[i].cells.length;j++){
+          var cell = tbody.rows[i].cells[j];
+          as = cell.getElementsByTagName("a");
+          if (as.length == 0) continue;
+          hasLinks = true;
+          if (cell.classList && (cell.classList.contains("lecture-free") || cell.classList.contains("holiday"))) {
+            //for (var k=0;k<as.length;k++) {
+              
+            //}
+            urls.push(as[0].href);
+          }
+        }
+      }
+      
+      localStorage["urlsToDelete"] = JSON.stringify(urls);
+      if (hasLinks) location.href = document.getElementsByClassName("next")[0].href;
+      else location.href = urls[0];
+    }
     markHolidays();
+    if (loc.contains("view=month")) {
+      if (localStorage["deletionInProgress"]) removeFromHolidays();
+      var buttons = document.getElementsByClassName("buttons")[0];
+      buttons.appendChild(makeButton("remove from holidays", function(){
+        localStorage["deletionInProgress"] = "true";
+        localStorage["urlsToDelete"] = "[]";
+        removeFromHolidays();
+      }));
+    } else if (loc.contains("view=day")) {
+      if (localStorage["deletionInProgress"]) {
+        var found = false;
+        var commands = document.getElementsByClassName("commands");
+        if (commands.length > 0) {
+          var as = commands[0].getElementsByTagName("a");
+          for (var i=0;i<as.length;i++) if (as[i].href.contains("delete")) { location.href = as[i].href; found = true; break;}
+        }
+        if (!found) {
+          urls = JSON.parse(localStorage["urlsToDelete"]);
+          //alert(loc+"\n"+urls);
+          
+          var nurls = [];
+          for (var i=0;i<urls.length;i++) if (urls[i] != loc) nurls.push(urls[i]);          
+          localStorage["urlsToDelete"] = JSON.stringify(nurls);
+          if (nurls.length == 0) { localStorage["deletionInProgress"] = ""; alert("done"); }
+          else location.href = nurls[0];        
+        }
+      }
+    } else if (localStorage["deletionInProgress"]) {
+      urls = JSON.parse(localStorage["urlsToDelete"]);
+      if (urls.length == 0) localStorage["deletionInProgress"] = "";
+      else location.href = urls[0];
+    }
+    break;
+  case "/calendar/delete.php":
+    if (localStorage["deletionInProgress"]) {
+      var forms = document.getElementsByTagName("form");
+      forms[0].submit();
+      /*for (var i=0;i<inputs.length;i++) 
+        if (inputs[i].type == "submit") {
+          inputs[i].
+          break;
+        }*/
+    }
     break;
   case "http://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
   case "https://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
@@ -664,3 +751,4 @@ called = 1;
   "responseType": "document"
   });
 }*/
+
