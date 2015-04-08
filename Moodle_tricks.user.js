@@ -11,6 +11,7 @@
 // @grant       GM_getValue
 // ==/UserScript==
 
+
 var loc = location.toString();
 var page = /moodle[^/]+([^?]*)/.exec(loc);
 if (page) page = page[1];
@@ -400,8 +401,7 @@ switch (page) {
     break;
     
   case "/calendar/event.php": 
-alert("omg");
-    setTimeout(function(){alert("fy");
+    setTimeout(function(){ 
     var form = document.getElementById("mform1");
     var btn = document.createElement("button");
     btn.textContent = "UNIVIS Time Import";
@@ -489,7 +489,7 @@ alert("omg");
       
       return false;
     });
-    form.insertBefore(btn, form.firstElementChild);}, 1500);
+    form.insertBefore(btn, form.firstElementChild);}, 500);
     break;
   case "/calendar/view.php":     
     function markHolidays() {
@@ -663,7 +663,7 @@ alert("omg");
     break;
   case "http://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
   case "https://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
-    parseLectureDates(document, function(n,v){/*alert(n+": "+v); */GM_setValue(n,v); }, function (n) {return GM_getValue(n); });
+    parseLectureDates(document, function(n,v){GM_setValue(n,v); if (GM_getValue(n) != v) alert(n+": "+GM_getValue(n) + " != "+v);  }, function (n) {return GM_getValue(n); });
     break;
 }
 
