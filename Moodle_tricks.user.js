@@ -452,7 +452,7 @@ switch (page) {
         cb.dispatchEvent(event);
       }
       
-      var prettyKind = {"VORL": "Vorlesung", "UE": "Übung", "SEM": "Seminar"}[kind];
+      var prettyKind = {"VORL": "Vorlesung", "UE": "Übung", "SEM": "Seminar", "HS": "Hauptseminar"}[kind];
       
       document.getElementById("id_name").value = prettyKind;
       if (times.length == 2) alert("Veranstaltungen mit mehreren Daten sind momentan nicht unterstützt. TODO: Send Form with XMLHTTPRequest");
