@@ -422,24 +422,42 @@ switch (page) {
     break;
     
   case "/calendar/event.php": 
+    function setMoodleDate(id, date){
+      selectOptionValue(document.getElementById(id+"_year"),date.getFullYear());
+      selectOptionValue(document.getElementById(id+"_month"),date.getMonth()+1);
+      selectOptionValue(document.getElementById(id+"_day"),date.getDate());
+    }
     setTimeout(function(){ 
-    var startselect = document.createElement("select");
     var realWallDate = new Date(); var y = realWallDate.getFullYear();
+    var startselect = document.createElement("select");
+    var endselect = document.createElement("select");
+    
     startselect.innerHTML = '<option value="">this week</option><option value="WS'+(y-1)+'">WS'+(y-1)+'/'+(y)+'</option><option value="SS'+y+'">SS'+y+'</option><option value="WS'+y+'">WS'+y+'/'+(y+1)+'</option>';
     var startchanged = function(){
       var dateToUse;
       if (startselect.value == "") {
         dateToUse = realWallDate;
+        selectOptionValue(endselect, 16);
       } else {
         if (!getLectureDate(startselect.value)) { getLectureDates(startchanged); return; }
         var semester = getParsedLectureDate(startselect.value);
         dateToUse = semester.from;
+        selectOptionValue(endselect, startselect.value);
       }
       selectOptionValue(document.getElementById("id_timestart_year"),dateToUse.getFullYear());
       selectOptionValue(document.getElementById("id_timestart_month"),dateToUse.getMonth()+1);
       selectOptionValue(document.getElementById("id_timestart_day"),dateToUse.getDate());
     };
     startselect.addEventListener("change", startchanged);
+
+    var temp = '<option value="16">after 16 times</option><option value="WS'+(y-1)+'">WS'+(y-1)+'/'+(y)+'</option><option value="SS'+y+'">SS'+y+'</option><option value="WS'+y+'">WS'+y+'/'+(y+1)+'</option>';
+    for (var i=1;i<16;i++) temp += '<option value="' + i + '">after '+i+' times</option>';
+    endselect.innerHTML = temp;
+    var endchanged = function(){
+      if (endselect.value * 1 == endselect.value) return;
+      if (!getLectureDate(endselect.value)) getLectureDates(endchanged);
+    };
+    endselect.addEventListener("change", endchanged);
     
     var form = document.getElementById("mform1");
     var btn = document.createElement("button");
@@ -494,7 +512,7 @@ switch (page) {
       var prettyKind = {"VORL": "Vorlesung", "UE": "Übung", "SEM": "Seminar", "HS": "Hauptseminar"}[kind];
       
       document.getElementById("id_name").value = prettyKind;
-      if (times.length == 2) alert("Veranstaltungen mit mehreren Daten sind momentan nicht unterstützt. TODO: Send Form with XMLHTTPRequest");
+      if (times.length >= 2) alert("Veranstaltungen mit mehreren Daten sind momentan nicht unterstützt. TODO: Send Form with XMLHTTPRequest");
       for (var i=0;i < times.length; i++) {
         var t = times[i];
         selectOptionText(document.getElementById("id_timestart_hour"), t[1]);
@@ -508,8 +526,17 @@ switch (page) {
           var date = new Date(document.getElementById("id_timestart_year").value*1,document.getElementById("id_timestart_month").value*1-1,document.getElementById("id_timestart_day").value*1);
           var curDay = date.getDay();
           date.setDate(date.getDate() + neededDay - curDay + (neededDay < curDay ? 7 : 0) );
-          setChecked(document.getElementById("id_repeat"), true);
-          document.getElementById("id_repeats").value = "16";
+          var repcount = endselect.value;
+          if (endselect.value * 1 != endselect.value) {
+             var semester = getParsedLectureDate(endselect.value);
+             semester.to.setHours(0,0,0,0);
+             var oneDay = 24*60*60*1000; 
+             var diffDays = Math.round((semester.to.getTime() - date.getTime()) / (oneDay)) + 1; //same day => 1, one week => 8
+             if (diffDays <= 0) repcount = 1;
+             else repcount = Math.ceil( diffDays  / 7);
+          }
+          setChecked(document.getElementById("id_repeat"), repcount != "1");
+          document.getElementById("id_repeats").value = repcount;
         } else {
           var pd = /([0-9]+)[.]([0-9]+)[.]([0-9]+)/.exec(t[0]);
           date = new Date(pd[3]*1,pd[2]-1,pd[1]*1);
@@ -532,6 +559,8 @@ switch (page) {
     form.insertBefore(btn, insertBefore);
     form.insertBefore(document.createTextNode("start:"), insertBefore);
     form.insertBefore(startselect, insertBefore);
+    form.insertBefore(document.createTextNode("end:"), insertBefore);
+    form.insertBefore(endselect, insertBefore);
     }, 500);
     break;
   case "/calendar/view.php":     
