@@ -52,6 +52,27 @@ function makeButton(text, onclick) {
     return btn;
 }
 
+function getLectureDate(y) { return GM_getValue("lectures"+y); } //e.g. WS2015 means WS 15/16. Use getParsedLectureDate for everything except checking if it exists
+function getParsedLectureDate(y) { 
+  var temp = JSON.parse(getLectureDate(y));
+  temp.from = new Date(temp.from);
+  temp.from.setHours(0,0,0,0);
+  temp.to = new Date(temp.to);
+  if (temp.xmas) {
+    temp.xmas.from = new Date(temp.xmas.from);
+    temp.xmas.from.setHours(0,0,0,0);
+    temp.xmas.to = new Date(temp.xmas.to);
+  }
+  temp.contains = function(date){
+    if (date < this.from || date > this.to) return false;
+    if (this.xmas) if (date >= this.xmas.from || date <= this.xmas.to) return false;
+    return true;
+  };
+ // alert(temp.toSource());
+  return temp;
+}
+
+
 switch (page) {
   case "/grade/report/grader/index.php": 
     var courseid = extractId(location.href.toString());
@@ -402,6 +423,24 @@ switch (page) {
     
   case "/calendar/event.php": 
     setTimeout(function(){ 
+    var startselect = document.createElement("select");
+    var realWallDate = new Date(); var y = realWallDate.getFullYear();
+    startselect.innerHTML = '<option value="">this week</option><option value="WS'+(y-1)+'">WS'+(y-1)+'/'+(y)+'</option><option value="SS'+y+'">SS'+y+'</option><option value="WS'+y+'">WS'+y+'/'+(y+1)+'</option>';
+    var startchanged = function(){
+      var dateToUse;
+      if (startselect.value == "") {
+        dateToUse = realWallDate;
+      } else {
+        if (!getLectureDate(startselect.value)) { getLectureDates(startchanged); return; }
+        var semester = getParsedLectureDate(startselect.value);
+        dateToUse = semester.from;
+      }
+      selectOptionValue(document.getElementById("id_timestart_year"),dateToUse.getFullYear());
+      selectOptionValue(document.getElementById("id_timestart_month"),dateToUse.getMonth()+1);
+      selectOptionValue(document.getElementById("id_timestart_day"),dateToUse.getDate());
+    };
+    startselect.addEventListener("change", startchanged);
+    
     var form = document.getElementById("mform1");
     var btn = document.createElement("button");
     btn.textContent = "UNIVIS Time Import";
@@ -478,10 +517,10 @@ switch (page) {
           document.getElementById("id_repeats").value = "1";
         }
         
-        selectOptionValue(document.getElementById("id_timestart_year"),date.getYear());
+        selectOptionValue(document.getElementById("id_timestart_year"),date.getFullYear());
         selectOptionValue(document.getElementById("id_timestart_month"),date.getMonth()+1);
         selectOptionValue(document.getElementById("id_timestart_day"),date.getDate());
-        selectOptionValue(document.getElementById("id_timedurationuntil_year"),date.getYear());
+        selectOptionValue(document.getElementById("id_timedurationuntil_year"),date.getFullYear());
         selectOptionValue(document.getElementById("id_timedurationuntil_month"),date.getMonth()+1);
         selectOptionValue(document.getElementById("id_timedurationuntil_day"),date.getDate());
       }
@@ -489,7 +528,11 @@ switch (page) {
       
       return false;
     });
-    form.insertBefore(btn, form.firstElementChild);}, 500);
+    var insertBefore = form.firstElementChild;
+    form.insertBefore(btn, insertBefore);
+    form.insertBefore(document.createTextNode("start:"), insertBefore);
+    form.insertBefore(startselect, insertBefore);
+    }, 500);
     break;
   case "/calendar/view.php":     
     function markHolidays() {
@@ -504,27 +547,8 @@ switch (page) {
         var year = date.getFullYear();
         //var year = /(2[0-9]{3}) *$/.exec(document.title)[1]*1;
         if (localStorage["stateHolidays"+year]=="0") localStorage["stateHolidays"+year] = "";
-        if (!localStorage["stateHolidays"+year]) { getStateHolidays(year, markHolidays); return; }
-        function getLectureDate(y) { return GM_getValue("lectures"+y); }
+        if (!localStorage["stateHolidays"+year]) { getStateHolidays(year, markHolidays); return; }        
         if (!getLectureDate("SS"+year) || !getLectureDate("WS"+year) || !getLectureDate("WS"+(year-1))) { getLectureDates(markHolidays); return; }
-        function getParsedLectureDate(y) { 
-          var temp = JSON.parse(getLectureDate(y));
-          temp.from = new Date(temp.from);
-          temp.from.setHours(0,0,0,0);
-          temp.to = new Date(temp.to);
-          if (temp.xmas) {
-            temp.xmas.from = new Date(temp.xmas.from);
-            temp.xmas.from.setHours(0,0,0,0);
-            temp.xmas.to = new Date(temp.xmas.to);
-          }
-          temp.contains = function(date){
-            if (date < this.from || date > this.to) return false;
-            if (this.xmas) if (date >= this.xmas.from || date <= this.xmas.to) return false;
-            return true;
-          };
-         // alert(temp.toSource());
-          return temp;
-        }
         date.setHours(0,0,0,0);
 
         var stringholidays = JSON.parse(localStorage["stateHolidays"+year]);
