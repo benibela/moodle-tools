@@ -54,7 +54,9 @@ function makeButton(text, onclick) {
 
 function getLectureDate(y) { return GM_getValue("lectures"+y); } //e.g. WS2015 means WS 15/16. Use getParsedLectureDate for everything except checking if it exists
 function getParsedLectureDate(y) { 
-  var temp = JSON.parse(getLectureDate(y));
+  var ld = getLectureDate(y);
+  if (!ld) { return {"contains": function(){return false;}}; } 
+  var temp = JSON.parse(ld);
   temp.from = new Date(temp.from);
   temp.from.setHours(0,0,0,0);
   temp.to = new Date(temp.to);
@@ -65,7 +67,7 @@ function getParsedLectureDate(y) {
   }
   temp.contains = function(date){
     if (date < this.from || date > this.to) return false;
-    if (this.xmas) if (date >= this.xmas.from || date <= this.xmas.to) return false;
+    if (this.xmas) if (date >= this.xmas.from && date <= this.xmas.to) return false;
     return true;
   };
  // alert(temp.toSource());
@@ -574,10 +576,14 @@ switch (page) {
         if (!temp) temp = /time=([0-9]+)/.exec(loc);
         var date =  temp ? new Date(temp[1]*1000) : new Date();
         var year = date.getFullYear();
+        var month = date.getMonth()+1;
         //var year = /(2[0-9]{3}) *$/.exec(document.title)[1]*1;
         if (localStorage["stateHolidays"+year]=="0") localStorage["stateHolidays"+year] = "";
-        if (!localStorage["stateHolidays"+year]) { getStateHolidays(year, markHolidays); return; }        
-        if (!getLectureDate("SS"+year) || !getLectureDate("WS"+year) || !getLectureDate("WS"+(year-1))) { getLectureDates(markHolidays); return; }
+        if (!localStorage["stateHolidays"+year]) { getStateHolidays(year, markHolidays); return; }  
+        //alert(year+":"+!getLectureDate("SS"+year)  + "::"+ !getLectureDate("WS"+year) + "::"+ !getLectureDate("WS"+(year-1)))
+        if (  (month < 10 && !getLectureDate("SS"+year))	
+           || (month > 6 &&  !getLectureDate("WS"+year)) 
+           || (month < 6 &&  !getLectureDate("WS"+(year-1)))) { getLectureDates(markHolidays); return; }
         date.setHours(0,0,0,0);
 
         var stringholidays = JSON.parse(localStorage["stateHolidays"+year]);
@@ -587,6 +593,7 @@ switch (page) {
  
         var ss = getParsedLectureDate("SS"+year);
         var ws = getParsedLectureDate("WS"+year);
+        //alert(ws.toSource());
         var lastws = getParsedLectureDate("WS"+(year-1));
 
         var tbody = table.getElementsByTagName("tbody")[0];
@@ -716,7 +723,13 @@ switch (page) {
     break;
   case "http://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
   case "https://www.uni-luebeck.de/studium/studierenden-service-center/service/termine/vorlesungszeiten.html":
-    parseLectureDates(document, function(n,v){GM_setValue(n,v); if (GM_getValue(n) != v) alert(n+": "+GM_getValue(n) + " != "+v);  }, function (n) {return GM_getValue(n); });
+    parseLectureDates(document, 
+      function(n,v){
+        GM_setValue(n,v); 
+        if (GM_getValue(n) != v) 
+          alert(n+": "+GM_getValue(n) + " != "+v);  
+      }, 
+      function (n) {return GM_getValue(n); });
     break;
 }
 
