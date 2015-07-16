@@ -645,8 +645,7 @@ switch (page) {
         }*/
       }
     }
-    function removeFromHolidays(){
-      if (!localStorage["deletionInProgress"]) return;
+    function iterateEvents(callback){
       var tables = document.getElementsByClassName("calendartable");
       //for (var ti=0;ti<tables.length;ti++) {
       var ti = 0;
@@ -655,35 +654,72 @@ switch (page) {
  
       var hasLinks = false;
  
-      urls = JSON.parse(localStorage["urlsToDelete"]);
- 
       for (var i=0;i<tbody.rows.length;i++){
         for (var j=0;j<tbody.rows[i].cells.length;j++){
           var cell = tbody.rows[i].cells[j];
           as = cell.getElementsByTagName("a");
           if (as.length == 0) continue;
           hasLinks = true;
-          if (cell.classList && (cell.classList.contains("lecture-free") || cell.classList.contains("holiday"))) {
-            //for (var k=0;k<as.length;k++) {
-              
-            //}
-            urls.push(as[0].href);
-          }
+          callback(as, cell);
         }
       }
+      return hasLinks;
+    }
+    function removeFromHolidays(){
+      if (!localStorage["deletionInProgress"]) return;
+      urls = JSON.parse(localStorage["urlsToDelete"]);
+      var hasLinks = iterateEvents(function(as, cell){
+        if (cell.classList && (cell.classList.contains("lecture-free") || cell.classList.contains("holiday"))) {
+          urls.push(as[0].href);
+        }
+      });
       
       localStorage["urlsToDelete"] = JSON.stringify(urls);
       if (hasLinks) location.href = document.getElementsByClassName("next")[0].href;
       else location.href = urls[0];
     }
+    function calendarExport(){
+      if (!localStorage["exportInProgress"]) return;
+      exports = JSON.parse(localStorage["export"]);
+ 
+      var hasLinks = iterateEvents(function(as, cell){
+        var temp = [];
+        for (var i=1;i<as.length;i++)
+          temp.push({"name": as[i].textContent, "href": as[i].href});
+        exports.push({
+          "time": /time=([0-9]+)/.exec(as[0].href)[1]*1000,
+          "href":  as[0].href,
+          "events": temp
+        });
+      });
+ 
+      localStorage["export"] = JSON.stringify(exports);
+      if (hasLinks) location.href = document.getElementsByClassName("next")[0].href;
+      else {
+        localStorage["exportInProgress"] = "";
+        var res = [];
+        for (var i=0;i<exports.length;i++) { 
+          var d = (new Date(exports[i].time));
+          var JSSortedDays = new Array("So","Mo","Di","Mi","Do","Fr","Sa");  
+          res.push(JSSortedDays[d.getDay()] + ", " + d.toISOString().substr(0,10) + ": "+exports[i].events.map(function(o){return o.name;}).join(" ") ); 
+        }
+        alert(res.join("\n"));
+      }
+    }
     markHolidays();
     if (loc.contains("view=month")) {
       if (localStorage["deletionInProgress"]) removeFromHolidays();
+      if (localStorage["exportInProgress"]) calendarExport();
       var buttons = document.getElementsByClassName("buttons")[0];
       buttons.appendChild(makeButton("remove from holidays", function(){
         localStorage["deletionInProgress"] = "true";
         localStorage["urlsToDelete"] = "[]";
         removeFromHolidays();
+      }));
+      buttons.appendChild(makeButton("export", function(){
+        localStorage["exportInProgress"] = "true";
+        localStorage["export"] = "[]";
+        calendarExport();
       }));
     } else if (loc.contains("view=day")) {
       if (localStorage["deletionInProgress"]) {
