@@ -30,7 +30,7 @@ sort < /tmp/usermap | uniq > usermap
      for $file in system("ls  ./results/" || $task) ! tokenize(., $line-ending) 
      return ($usermap($file), unparsed-text("file://./results/"|| $task||"/"||$file))
    )) } )
-        ' 
+        ' -e //title
     
   
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 CURPATH=$PWD
 RESULTS=$CURPATH/results
+mkdir -p $RESULTS/failed
 for submission in $(find submissions/ | grep "[.]c"); do 
   [[ $submission =~ ([0-9]+)/([^.]*)(_par.c)? ]]
   ID=${BASH_REMATCH[1]}
@@ -20,12 +21,20 @@ for submission in $(find submissions/ | grep "[.]c"); do
   make $TASK 2>&1 | tee compilemessages
   if [[ -e ./$TASK ]]; then
     mkdir -p $RESULTS/$TASK
-    touch $RESULTS/$TASK/$ID
     for run in {1..9}; do
-      ./$TASK  | tail -1 |  awk '{print $5}' | tee -a $RESULTS/$TASK/$ID
+      if timeout -k 15m 10m ./$TASK > log; then 
+        tail -1 log |  awk '{print $5}' | tee -a $RESULTS/$TASK/$ID
+      else
+        if [[ $? -eq 124 ]]; then 
+          tail log > $RESULTS/failed/$ID
+          echo "TIMEOUT (> 10 min)" | tee -a $RESULTS/failed/$ID;
+        else
+          cp log $RESULTS/failed/$ID
+        fi
+        break
+      fi
     done;
   else 
-    mkdir -p $RESULTS/failed
     echo "compilation failed" > $RESULTS/failed/$ID
     cat compilemessages >> $RESULTS/failed/$ID
   fi
