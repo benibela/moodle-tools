@@ -699,7 +699,8 @@ switch (page) {
         localStorage["exportInProgress"] = "";
         var res = [];
         for (var i=0;i<exports.length;i++) { 
-          var d = (new Date(exports[i].time));
+          var oneHalfDay = 24*60*60*1000 / 2;
+          var d = (new Date(exports[i].time + oneHalfDay));
           var JSSortedDays = new Array("So","Mo","Di","Mi","Do","Fr","Sa");  
           res.push(JSSortedDays[d.getDay()] + ", " + d.toISOString().substr(0,10) + ": "+exports[i].events.map(function(o){return o.name;}).join(" ") ); 
         }
