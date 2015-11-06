@@ -4,7 +4,7 @@ echo you need to set a course
 exit
 fi
 if [[ -z "$user" ]]; then 
-export user="benito.tcs"
+export user=$(whoami)".tcs"
 fi
 if [[ -z "$pass" ]]; then 
 echo Enter password for $user

@@ -3,7 +3,7 @@ if [[ -z "$course" ]]; then
 export course=894
 fi
 if [[ -z "$user" ]]; then 
-export user="benito.tcs"
+export user=$(whoami)".tcs"
 fi
 if [[ -z "$pass" ]]; then 
 echo Enter password for $user
