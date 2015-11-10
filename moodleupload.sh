@@ -1,14 +1,7 @@
 #!/bin/sh
-if [[ -z "$course" ]]; then 
-export course=894
-fi
-if [[ -z "$user" ]]; then 
-export user=$(whoami)".tcs"
-fi
-if [[ -z "$pass" ]]; then 
-echo Enter password for $user
-read -r pass
-fi
+if [[ -z "$course" ]]; then echo need course; exit; fi
+if [[ -z "$user" ]]; then export user=$(whoami)".tcs"; fi
+if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
 export course
 export user
 export pass
@@ -27,7 +20,7 @@ fi
   $hour := integer($option("hour", 10)),
   $allow-file-upload := $option("allow-file-upload", false()) cast as xs:boolean, 
   $make-assignment := $option("make-assignment", true()) cast as xs:boolean, 
-  $uploadFilename := replace($url, "[.]tex", ".pdf"), 
+  $uploadFilename := $option("file-to-upload", replace($url, "[.]tex", ".pdf")), 
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
   $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
   $texdeadline := extract($sheet, "insertdeadline\{(.*)\}", 1 ), 
@@ -38,7 +31,7 @@ fi
   $spoints := sum(tokenize(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") else $sheet, $line-ending) !  extract(., "^[^%]*credits=([^\],%]*)", 1) ! tokenize(., "[a-zA-Z ]+") [.] ! number())  '  \
    'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
   [ 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' --allow-repetitions \
-    -e 'section := (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1]' \
+    -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
     -f 'form((//form)[1], "edit=on")' \
     -f 'css("div.activityinstance")[contains(a/@href, "view.php") and .//text()/normalize-space() = $title]/..//a[matches(@href, "mod[.]php.*hide")]'\
     -e '()' \
