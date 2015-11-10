@@ -9,6 +9,7 @@ basepath="$(dirname -- ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]})"/../
 
 $basepath/getsubmissions.sh 
 
+export course
 export exercise
 export assignmentfile
 export titleprepend
