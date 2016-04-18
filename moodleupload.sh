@@ -1,9 +1,9 @@
 #!/bin/sh
-if [[ -z "$course" ]]; then echo need course; exit; fi
+#if [[ -z "$course" ]]; then echo need course; exit; fi
 if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); fi
 if [[ -z "$user" ]]; then echo Need moodle \$user; exit; fi
 if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
-export course
+#export course
 export user
 export pass
 
@@ -11,11 +11,25 @@ if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"
 fi
 
-~/xidel "$texfile" --variable 'course,user,pass' -e '
+~/xidel "$texfile" --variable 'course,user,pass' --xquery '
+  declare function local:tex-replace($s, $commands, $cutoff) {
+    let $cmd := extract($s, "\\([a-zA-Z]+)", (0, 1))
+    return if ($cmd[1] and $cutoff > 0) then local:tex-replace(replace($s, $cmd[1], $commands($cmd[2]), "q"), $commands, $cutoff - 1)
+    else $s
+  };()' --xquery '
   $sheet := $raw, 
+  $includes := ( let $direct := extract($sheet ,"\\input\{(.*)\}", 1, "*") ! resolve-uri(., $url)
+                 return ($direct, if (empty($direct[contains(., "lecture-config")])) then
+                   ("../config", "../../config/", "../../../config", "../", "../../", "../../../")!resolve-uri(. || "lecture-config.tex", $url)[file:exists(.)][1]
+                  else () )
+                ) ! file:read-text(.),
+  $tex-defs := {},  
+  for tumbling window $cmd in ($includes, $sheet) ! extract ( .,  "\\def\\([^{]+)\{(.*)\}", (1,2) , "*") start at $i when true() end at $j when $j - $i > 0 return
+    $tex-defs($cmd[1]) := local:tex-replace($cmd[2], $tex-defs, 100),
   $option := function($name, $default) {
     let $res := extract($sheet, "% *Moodle +"||$name||" *= *(.*)", 1) return
-    if ($res) then $res else $default
+    if ($res) then $res 
+    else ( $includes ! extract(., "% *Moodle +"||$name||" *= *(.*)", 1)[.], $default) [1]
   },
   $course := integer($option("course", $course)),
   $hour := integer($option("hour", 10)),
@@ -24,7 +38,7 @@ fi
   $uploadFilename := $option("file-to-upload", replace($url, "[.]tex", ".pdf")), 
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
   $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
-  $texdeadline := extract($sheet, "insertdeadline\{(.*)\}", 1 ), 
+  $texdeadline := local:tex-replace(  extract($sheet, "insertdeadline\{(.*)\}", 1 )  , $tex-defs, 100), 
   $sdeadline := if (not($make-assignment)) then "" 
                 else if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
                 else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")),  
