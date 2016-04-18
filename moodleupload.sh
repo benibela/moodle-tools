@@ -25,11 +25,15 @@ fi
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
   $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
   $texdeadline := extract($sheet, "insertdeadline\{(.*)\}", 1 ), 
-  $sdeadline := if (not($make-assignment)) then "" else if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")),  
+  $sdeadline := if (not($make-assignment)) then "" 
+                else if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
+                else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")),  
   $title := $option("title", if ($slang eq "english") then x"Exercise sheet {$snumber}" else x"Übungsblatt {$snumber}"), 
   $description := $option("description", $title),
   $assignmenttitle := $title  || (if ($allow-file-upload) then "" else if ($slang eq "english") then " (results)" else " (Ergebnisse)"), 
-  $spoints := sum(tokenize(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") else $sheet, $line-ending) !  extract(., "^[^%]*credits=([^\],%]*)", 1) ! tokenize(., "[a-zA-Z ]+") [.] ! number())  '  \
+  $spoints := sum(tokenize(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") 
+                           else $sheet, $line-ending) 
+                  !  extract(., "^[^%]*credits=([^\],%]*)", 1) ! tokenize(., "[a-zA-Z ]+") [.] ! number())  '  \
    'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
   [ 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' --allow-repetitions \
     -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
