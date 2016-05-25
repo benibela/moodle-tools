@@ -818,8 +818,9 @@ function parseLectureDates(doc, setValue, getValue){
     var lastWinter;
     for (var i=0;i<list.length;i++) {
       var cur = list[i].textContent.trim();
-      var dateRange = /([0-9.]+) *- *([0-9.]+) *$/.exec(cur);
+      var dateRange = /([0-9.]+) *[-–] *([0-9.]+) *$/.exec(cur);
       if (!dateRange) continue;
+      //          alert(cur+"?")
       //alert(cur+":"+dateRange[1]);
       //alert(normalizeDate(dateRange[1]));
       var from = normalizeDate(dateRange[1]);
