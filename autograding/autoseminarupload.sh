@@ -7,12 +7,14 @@ if [[ -z "$assignmentfile" ]]; then echo "need assignmentfile (3 columns, date &
 
 basepath="$(dirname -- ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]})"/../
 
-$basepath/getsubmissions.sh 
-
 export course
 export exercise
 export assignmentfile
 export titleprepend
+export pass
+
+$basepath/getsubmissions.sh 
+
 
 ~/xidel --variable course,user,pass \
           'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
@@ -41,7 +43,7 @@ export titleprepend
             let $name := $submission!normalize-space(substring-before(.,"§"))
             let $filename := "submissions/files/" || extract($submission,"([0-9]+/[^/?]+)([?].*)? *$", 1)
             let $assignment := (for $assignment in $assignmentfile order by simple-name-sim($assignment(1), $name) return $assignment )[1](2)
-            let $uploadInfoFile := replace($filename, "[.][a-zA-Z]+$", ".tex")
+            let $uploadInfoFile := replace($filename, "[.][a-zA-Z]+$", "") || ".tex"
             return (file:resolve-path($uploadInfoFile), file:write-text-lines($uploadInfoFile,
                ("%Moodle title="||$titleprepend || " "|| $assignment, 
                 "%Moodle file-to-upload="||file:resolve-path($filename), 
