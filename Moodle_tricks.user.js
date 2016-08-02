@@ -163,8 +163,9 @@ switch (page) {
         var presentation = false;
         if (( /Blatt|Zettel|Sheet/i).test(name)) ;
         else if (( /rechnet|Presented/i).test(name)) { reqPoints = 2; presentation = true; }
-        else if (( /klausur/i).test(name)) continue;
-        
+        else if (( /klausur|Einreichung Ihres Codes für/i).test(name)) continue;
+        var pointsOverride = (/\( *([0-9]+) *(points|punkte)\)/i).exec(name);
+        if (pointsOverride) reqPoints = pointsOverride[1]/2;
         
         for (var r = HEADER_SKIP; r < t.rows.length - FOOTER_SKIP; r++) {
           var cell = t.rows[r].cells[c];
@@ -771,7 +772,7 @@ switch (page) {
 }
 
 function extractId(href){
-  return /id=([0-9]+)$/.exec(href)[1]
+  return /id=([0-9]+)(&sortitemid=[a-zA-Z]+)?$/.exec(href)[1]
 }
 
 function getAssignMaxPoints(id, callback){
