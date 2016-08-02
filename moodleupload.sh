@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #if [[ -z "$course" ]]; then echo need course; exit; fi
 if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); fi
 if [[ -z "$user" ]]; then echo Need moodle \$user; exit; fi
@@ -11,7 +11,7 @@ if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"
 fi
 
-~/xidel "$texfile" --variable 'course,user,pass' --xquery '
+~/xidel "$texfile" --variable 'course,user,pass'  --xquery '
   declare function local:tex-replace($s, $commands, $cutoff) {
     let $cmd := extract($s, "\\([a-zA-Z]+)", (0, 1))
     return if ($cmd[1] and $cutoff > 0) then local:tex-replace(replace($s, $cmd[1], $commands($cmd[2]), "q"), $commands, $cutoff - 1)
@@ -34,7 +34,7 @@ fi
   $course := integer($option("course", $course)),
   $hour := integer($option("hour", 10)),
   $allow-file-upload := $option("allow-file-upload", false()) cast as xs:boolean, 
-  $make-assignment := $option("make-assignment", true()) cast as xs:boolean, 
+  $make-assignment := $option("make-assignment", contains($sheet, "\usepackage{tcs-exercise}") or contains($sheet, "\begin{homework}") or contains($sheet, "\begin{classroom exercises}")) cast as xs:boolean, 
   $uploadFilename := $option("file-to-upload", replace($url, "[.]tex", ".pdf")), 
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
   $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
@@ -50,7 +50,7 @@ fi
                   !  extract(., "^[^%]*credits=([^\],%]*)", 1) ! tokenize(., "[a-zA-Z ]+") [.] ! number())  '  \
    'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
   [ 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' --allow-repetitions \
-    -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
+    -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe") and matches(.., "Übungsblatt|Exercise +sheet")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
     -f 'form((//form)[1], "edit=on")' \
     -f 'css("div.activityinstance")[contains(a/@href, "view.php") and .//text()/normalize-space() = $title]/..//a[matches(@href, "mod[.]php.*hide")]'\
     -e '()' \
