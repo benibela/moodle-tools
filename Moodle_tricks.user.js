@@ -423,6 +423,48 @@ switch (page) {
 //    alert(presentationId);
 //    alert(formula);
     break;
+  case "/course/modedit.php": 
+    var addbtn = document.getElementById("id_option_add_fields");
+    //if (/add=choice/.test(loc)) { 
+    if (addbtn) {      
+      var count = document.getElementsByName("option_repeats");
+      function doImport(){
+        if (localStorage["choiceImport"]) {
+          var lines = localStorage["choiceImport"].split("\n");
+          if (!lines[lines.length-1]) lines.pop();
+          if (count.value * 1 < lines.length) addbtn.click(); 
+          else {
+            for (var i=0;i<lines.length;i++)
+              document.getElementsByName("option["+i+"]")[0].value = lines[i];
+            localStorage["choiceImport"] = "";
+          }
+        }
+      }
+      if (count)  {
+        count = count[0];
+        doImport();
+      }
+      addbtn.parentNode.appendChild(makeButton("import", function(){
+        var importarea = document.getElementById("bbimportarea");
+        if (!importarea) {
+          addbtn.parentNode.appendChild(document.createElement("br"));
+          var area = document.createElement("textarea");
+          area.id = "bbimportarea";
+          addbtn.parentNode.appendChild(area);
+        } else {          
+          localStorage["choiceImport"] = importarea.value;
+          doImport();
+        }
+      }));
+      addbtn.parentNode.appendChild(makeButton("set limit", function(){
+        var limit = prompt("limit");  
+        if (limit) {
+          for (var i=0;i<count.value*1;i++)
+            document.getElementsByName("limit["+i+"]")[0].value = limit;
+        }
+      }));
+    }
+    break;
     
   case "/calendar/event.php": 
     function setMoodleDate(id, date){
