@@ -1,12 +1,8 @@
 #!/bin/bash
 #if [[ -z "$course" ]]; then echo need course; exit; fi
-if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); fi
-if [[ -z "$user" ]]; then echo Need moodle \$user; exit; fi
-if [[ -z "$pass" ]]; then export pass=$(cat ~/.moodlepass); fi
-if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
-#export course
-export user
-export pass
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $DIR/common.sh
 
 if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"
