@@ -1,8 +1,7 @@
 #!/bin/bash
-#if [[ -z "$course" ]]; then echo need course; exit; fi
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-source $DIR/common.sh
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
+source "$DIR/common.sh"
 
 if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"

@@ -1,10 +1,8 @@
 #!/bin/bash
-if [[ -z "$exercise" ]]; then echo you need to set an exercise;exit;fi
-if [[ -z "$user" ]]; then export user="benito.tcs";fi
-if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
+if [[ -z "$exercise" ]]; then echo "you need to set an exercise (id from exercise grading view)";exit;fi
 
-export user
-export pass
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
+source "$DIR/common.sh"
 
 mkdir -p submissions/files
 

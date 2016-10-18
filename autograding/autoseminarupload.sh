@@ -1,19 +1,20 @@
  #!/bin/sh
 if [[ -z "$course" ]]; then echo need course; exit; fi
 if [[ -z "$exercise" ]]; then echo need exercise; exit; fi
-if [[ -z "$user" ]]; then export user=$(whoami)".tcs"; fi
-if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
 if [[ -z "$assignmentfile" ]]; then echo "need assignmentfile (3 columns, date & name & termin\\\\)"; exit; fi
 
-basepath="$(dirname -- ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]})"/../
+#basepath="$(dirname -- ${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]})"/../
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )/.."
+source "$DIR/common.sh"
+
 
 export course
 export exercise
 export assignmentfile
 export titleprepend
-export pass
 
-$basepath/getsubmissions.sh 
+
+$DIR/getsubmissions.sh 
 
 
 ~/xidel --variable course,user,pass \
@@ -49,7 +50,7 @@ $basepath/getsubmissions.sh
                 "%Moodle file-to-upload="||file:resolve-path($filename), 
                 "%Moodle make-assignment=false",
                 "%Moodle section-index="||(for $id in (1 to count($sections)) order by simple-str-sim($sections[$id], $assignment) return $id)[1] - 1)))' | while read -r infofile; do
-  $basepath/moodleupload.sh "$infofile";
+  $DIR/moodleupload.sh "$infofile";
 done
 
 #  || " => " ||

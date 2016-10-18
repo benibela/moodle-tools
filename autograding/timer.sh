@@ -1,9 +1,6 @@
 #!/bin/sh
-if [[ -z "$user" ]]; then export user=$(whoami)".tcs"; fi
-if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
-
-export user
-export pass
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )/.."
+source "$DIR/common.sh"
 
 while true; do
   course=1081 exercise=32214 assignmentfile=~/seminargeometry/termine.tex titleprepend=Ausarbeitung: ./autoseminarupload.sh 

@@ -1,14 +1,10 @@
 #!/bin/sh
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
+source "$DIR/common.sh"
+
 if [[ -z "$course" ]]; then 
 echo you need to set a course
 exit
-fi
-if [[ -z "$user" ]]; then 
-export user=$(whoami)".tcs"
-fi
-if [[ -z "$pass" ]]; then 
-echo Enter password for $user
-read -r pass
 fi
 if [[ -z "$section" ]]; then 
 section=1
@@ -20,7 +16,7 @@ export section
 export title
 
 while read -r title; do
-  ~/xidel -q --variable course,user,pass,section,title \
+  ~/xidel -s --variable course,user,pass,section,title \
   'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
   'https://moodle.uni-luebeck.de/course/view.php?id={$course}' \
   -f '//form[.//input[@name="edit" and @value="on"]]' \
