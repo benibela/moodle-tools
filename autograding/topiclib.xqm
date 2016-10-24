@@ -5,12 +5,26 @@ declare variable $utils:topics :=
   let $tabstart := index-of($utils:raw, $utils:raw[contains(., "tabula")][1]) 
   return $utils:raw[position () > $tabstart];
 declare variable $utils:multi-groups := exists($utils:topics[matches(., "Gruppe +[2B]")]);
+declare function utils:group-name($i){ ("A", "B") [$i]   };
+declare function utils:grouped-topic($topic){ 
+  if ($topic instance of xs:string) then $topic
+  else if ($utils:multi-groups) then utils:group-name(($topic(4),$topic(2))[1]) || ". "||$topic(3) 
+  else  $topic(3)
+};
 declare variable $utils:students-normal :=  trace(
       for $topic  in tail($utils:topics)!replace(.,"(\\(endl|\\|&amp;)|%).*","")!translate(.,"\{}","")[contains(.,"&amp;")]!normalize-space()
       let $split := tokenize($topic,"[&amp;]")!normalize-space()
       for $name at $group in tail($split) where $name
       return [$name, $group, $split[1]], "students");
-      
+declare function utils:get-reviewers-moodle-id($topic){
+  let $topictitle := "| "||normalize-space(utils:grouped-topic($topic))
+  for $review-file in (1 to 2) ! x"review{.}"
+  let $lines := file:read-text-lines($review-file)!normalize-space()
+  let $line := $lines[ends-with(., $topictitle)]
+  return extract($line, "^[0-9]+")
+};
+
+
 (:declare function utils:similarity-seq($s,$t){ 
   sum(for $i in 1 to count($s) return min(( 
     $i - (for $j in 1 to $i where $s[$i] = $t[$j] return $j)[last()], 
