@@ -11,7 +11,7 @@ export exercise
 export reviewnr
 export DIR
 
-#$DIR/getsubmissions.sh 
+$DIR/getsubmissions.sh 
 
 
 ~/xidel  --variable reviewnr,user,pass,exercise,titleprepend,DIR \
