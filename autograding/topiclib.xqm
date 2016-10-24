@@ -23,6 +23,17 @@ declare function utils:get-reviewers-moodle-id($topic){
   let $line := $lines[ends-with(., $topictitle)]
   return extract($line, "^[0-9]+")
 };
+declare function utils:get-reviewed($file, $student){
+  let $student := if ($student instance of xs:string) then $student else $student(1)
+  let $reviews := file:read-text-lines($file)
+  let $topic := substring-after($reviews[normalize-space(substring-before(substring-after(.," "), "|")) = $student], "|")
+  return $utils:students-normal[ utils:grouped-topic(.) = $topic ]
+};
+declare function utils:get-student-moodle-id($student){
+  let $student := if ($student instance of xs:string) then $student else $student(1)
+  let $mapping := file:read-text-lines("studentmapping")
+  return substring-before($mapping[substring-after(.," ") = $student], " ")
+};
 
 
 (:declare function utils:similarity-seq($s,$t){ 
