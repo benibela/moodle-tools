@@ -26,7 +26,7 @@ declare function utils:get-reviewers-moodle-id($topic){
 declare function utils:get-reviewed($file, $student){
   let $student := if ($student instance of xs:string) then $student else $student(1)
   let $reviews := file:read-text-lines($file)
-  let $topic := substring-after($reviews[normalize-space(substring-before(substring-after(.," "), "|")) = $student], "|")
+  let $topic := normalize-space(substring-after($reviews[normalize-space(substring-before(substring-after(.," "), "|")) = $student], "|"))
   return $utils:students-normal[ utils:grouped-topic(.) = $topic ]
 };
 declare function utils:get-student-moodle-id($student){
