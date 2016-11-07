@@ -10,43 +10,7 @@ xquery version "3.0";
 import module namespace utils="studenttopics" at "topiclib.xqm";
 
 
-let $times := file:read-text-lines("times"), 
-    $override-raw := (if (file:exists("override")) then file:read-text-lines("override") else ())!normalize-space()[.],
-    $time := function($i){ 
-      if ($i < 1) then xs:date($times[1]) + ($i - 1) * xs:dayTimeDuration("P7D") 
-      else if ($i > count($times)) then xs:date($times[last()]) + ($i - count($times)) * xs:dayTimeDuration("P7D") 
-      else $times[$i] },
-    $override := $override-raw ! [
-      let $row := tokenize(., ",")!normalize-space() where not($row[2] = ("dropped", "delayed"))
-      return ($row[1], 
-              fn:exactly-one((1 to 20)[$time(.) = $row[2]]), 
-              if ($row[3]) then xs:integer($row[3]) else $utils:students-normal[.(1) = $row[1]](2) 
-             )], 
-    $dropped := $override-raw[ends-with(., "dropped")]!substring-before(.,",")!normalize-space(),
-    $delayed := $override-raw[ends-with(., "delayed")]!substring-before(.,",")!normalize-space(),
-    $overridenNames := $override(1),
-    $notThereNames := ($dropped, $delayed, $overridenNames),
-(:    $overridenToGroup := {| $override[.(3)] ! { .(1): .(3) } |},:)
-   $students := (
-     $utils:students-normal!(if (.(1) = $notThereNames) then ["",.(2)] else .), 
-     $utils:students-normal[$delayed = .(1)]),
-   $groups := (1 to (if ($utils:multi-groups) then 2 else 1)),
-   $students := trace(
-      for $group in $groups
-      return
-        let $oldmax := max(for $student in $students where $student(2) = $group count $week return $week)
-        let $overridemax := max(($override[.(3) = $group](2),0))
-        for $student in ($students, (1 to ($overridemax - $oldmax)) ! ["", $group] ) 
-        where $student(2) = $group
-        count $week
-        let $over := $override[.(2) = $week and .(3) = $group ]
-        return if ($over) then (
-          if ($student(1) and not($student(1) = $overridenNames) ) then error(QName("x:x"), "Duplicate time" || $student(1) || " " || $over(1))
-          else let $oldstudent := exactly-one($utils:students-normal[.(1) = $over(1)])
-          return [$over(1), $group, $oldstudent(3), $oldstudent(2)]
-        ) else if ($student(1) = $overridenNames) then [""]
-        else $student
-    , "final students")
+let $student-times := utils:get-student-times()
 return (
 "\documentclass[10pt,a4paper]{article}
 \usepackage[left=3cm,top=3cm,landscape]{geometry}
@@ -61,19 +25,13 @@ return (
   let $table := function($groupoverride, $addendum, $sortfunc) {
     let $groups := if ($groupoverride) then $groupoverride else (1 to (if ($utils:multi-groups) then 2 else 1))
     let $result := 
-      for $sort in (
-        for $group in $groups
-        return
-          for $student in $students 
-          where  $student(2) = $group
-          count $week
-          return [$student(1), x"{("A","B")[($student(4), $student(2))[1]]||"."} {$student(3)}", x"ca. {$time($week - 4)}", $time($week - 2),  $time($week - 1), $time($week), $time($week + 2)] )      
-      order by $sortfunc($sort)
-      return if ($sort(1)) then join($sort(), "&amp;") || "\\"
+      for $student in $student-times[.(2) = $groups]
+      order by $sortfunc($student)
+      return if ($student(1)) then join(($student(1), utils:grouped-topic($student), "ca. "||$student(5), $student()[position() > 5]), "&amp;") || "\\"
              else if ($groupoverride) then "&amp;&amp;&amp;&amp;&amp;---\\"
              else ()
     return (
-    x"\section*{{ {("Themenzuordnung", "Gruppe A", "Gruppe B")[($groupoverride + 1, 1)[1]]} {$addendum} ({count($students[.(1) and .(2) = $groups])}) }} ",
+    x"\section*{{ {("Themenzuordnung", "Gruppe A", "Gruppe B")[($groupoverride + 1, 1)[1]]} {$addendum} ({count($student-times[.(1) and .(2) = $groups])}) }} ",
     "\begin{tabular}{llccccc}
     \bf Name &amp; \bf Thema &amp; \bf Vorbesprechung &amp; \bf Ausarbeitung/Folien &amp; \bf Gutachten &amp; \bf VORTRAG &amp; \bf Korrekturen\\ ",
     $result,
@@ -92,9 +50,9 @@ return (
 
 return (
 $table((), "{\small (Sortierung: Name)}", function($s){$s(1)}),
-$table((), "{\small (Sortierung: Thema)}", function($s){substring-after($s(2), " ")}),
-$table(1, "{\small (Sortierung: Zeit)}", function($s){$s(3)}),
-$table(2, "{\small (Sortierung: Zeit)}", function($s){$s(3)})
+$table((), "{\small (Sortierung: Thema)}", function($s){$s(3)}),
+$table(1, "{\small (Sortierung: Zeit)}", function($s){$s(5)}),
+$table(2, "{\small (Sortierung: Zeit)}", function($s){$s(5)})
 ),
 
 
