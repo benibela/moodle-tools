@@ -7,11 +7,16 @@ source "$DIR/common.sh"
 mkdir -p submissions/files
 
 touch submissions/old$exercise
+touch submissions/history$exercise
+
 ~/xidel  --variable user,pass 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
    "https://moodle.uni-luebeck.de/mod/assign/view.php?id=$exercise&action=grading"  \
    -e 'let $table := css("table.generaltable"), $col := count(exactly-one($table/thead/tr/th[.//a[contains(@href, "timesubmitted")]])/preceding-sibling::th ) + 1 return $table/tbody/tr/td[$col][not(normalize-space(.) = ("", "-"))]!x"{..//a[contains(@href, "user/view")]} § {.} § {let $file := ..//a/@href[contains(., "assignsubmission_file")] return if ($file) then $file else ..//a/@href[contains(., "onlinetext")] } "' > submissions/new$exercise
 
 comm -23 submissions/new$exercise submissions/old$exercise > submissions/active$exercise
+
+cat submissions/new$exercise submissions/history$exercise > submissions/history$exercise
+sort -u submissions/history$exercise -o submissions/history$exercise
 
 cp submissions/new$exercise /tmp/new$exercise$(date +"%Y%mT%d%H%M%S")
 cp submissions/old$exercise /tmp/old$exercise$(date +"%Y%mT%d%H%M%S")

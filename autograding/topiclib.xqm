@@ -23,9 +23,10 @@ declare function utils:get-reviewers-moodle-id($topic){
   let $line := $lines[ends-with(., $topictitle)]
   return extract($line, "^[0-9]+")
 };
+(: returns the student reviewed by $student :)
 declare function utils:get-reviewed($file, $student){
   let $student := if ($student instance of xs:string) then $student else $student(1)
-  let $reviews := file:read-text-lines($file)
+  let $reviews := if (count($file) = 1 and $file instance of xs:string) then file:read-text-lines($file) else $file
   let $topic := normalize-space(substring-after($reviews[normalize-space(substring-before(substring-after(.," "), "|")) = $student], "|"))
   return $utils:students-normal[ utils:grouped-topic(.) = $topic ]
 };
@@ -111,3 +112,12 @@ declare function utils:simple-name-sim($s, $t) {
   return utils:simple-str-sim($st[1], $tt[1]) + utils:simple-str-sim($st[count($st)], $tt[count($tt)])
 }; 
 
+declare function utils:latex-wrap($texts){
+ ("\documentclass[10pt,a4paper]{article}
+  \usepackage[utf8]{inputenc}
+  % Moodle course = " || $utils:course || "
+  ",
+  $texts,
+  "\end{document}"
+ )
+};
