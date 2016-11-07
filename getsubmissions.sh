@@ -12,7 +12,13 @@ touch submissions/old$exercise
    -e 'let $table := css("table.generaltable"), $col := count(exactly-one($table/thead/tr/th[.//a[contains(@href, "timesubmitted")]])/preceding-sibling::th ) + 1 return $table/tbody/tr/td[$col][not(normalize-space(.) = ("", "-"))]!x"{..//a[contains(@href, "user/view")]} § {.} § {let $file := ..//a/@href[contains(., "assignsubmission_file")] return if ($file) then $file else ..//a/@href[contains(., "onlinetext")] } "' > submissions/new$exercise
 
 comm -23 submissions/new$exercise submissions/old$exercise > submissions/active$exercise
+
+cp submissions/new$exercise /tmp/new$exercise$(date +"%Y%mT%d%H%M%S")
+cp submissions/old$exercise /tmp/old$exercise$(date +"%Y%mT%d%H%M%S")
+cp submissions/active$exercise /tmp/active$exercise$(date +"%Y%mT%d%H%M%S")
+
 cp submissions/new$exercise submissions/old$exercise
+
 
 
 ~/xidel --variable user,pass -e "\$lines := unparsed-text-lines('submissions/active$exercise') ! extract(., '[^§]+\$') ! normalize-space()" \
