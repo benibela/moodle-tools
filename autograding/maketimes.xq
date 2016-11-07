@@ -11,17 +11,24 @@ import module namespace utils="studenttopics" at "topiclib.xqm";
 
 
 let $times := file:read-text-lines("times"), 
-    $delayed := if (file:exists("delayed")) then file:read-text-lines("delayed") else (), 
-    $override := (if (file:exists("override")) then file:read-text-lines("override") else ()),
+    $override-raw := (if (file:exists("override")) then file:read-text-lines("override") else ())!normalize-space()[.],
     $time := function($i){ 
       if ($i < 1) then xs:date($times[1]) + ($i - 1) * xs:dayTimeDuration("P7D") 
       else if ($i > count($times)) then xs:date($times[last()]) + ($i - count($times)) * xs:dayTimeDuration("P7D") 
       else $times[$i] },
-    $override := trace($override!normalize-space()[.] ! [let $row := tokenize(., ",")!normalize-space() return ($row[1], fn:exactly-one((1 to 20)[$time(.) = $row[2]]), if ($row[3]) then xs:integer($row[3]) else $utils:students-normal[.(1) = $row[1]](2) )], "override"), 
+    $override := $override-raw ! [
+      let $row := tokenize(., ",")!normalize-space() where not($row[2] = ("dropped", "delayed"))
+      return ($row[1], 
+              fn:exactly-one((1 to 20)[$time(.) = $row[2]]), 
+              if ($row[3]) then xs:integer($row[3]) else $utils:students-normal[.(1) = $row[1]](2) 
+             )], 
+    $dropped := $override-raw[ends-with(., "dropped")]!substring-before(.,",")!normalize-space(),
+    $delayed := $override-raw[ends-with(., "delayed")]!substring-before(.,",")!normalize-space(),
     $overridenNames := $override(1),
+    $notThereNames := ($dropped, $delayed, $overridenNames),
 (:    $overridenToGroup := {| $override[.(3)] ! { .(1): .(3) } |},:)
    $students := (
-     $utils:students-normal!(if ($delayed = .(1) or $overridenNames = .(1)) then ["",.(2)] else .), 
+     $utils:students-normal!(if (.(1) = $notThereNames) then ["",.(2)] else .), 
      $utils:students-normal[$delayed = .(1)]),
    $groups := (1 to (if ($utils:multi-groups) then 2 else 1)),
    $students := trace(
