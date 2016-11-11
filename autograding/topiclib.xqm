@@ -35,8 +35,10 @@ declare function utils:get-student-moodle-id($student){
   let $mapping := file:read-text-lines("studentmapping")
   return substring-before($mapping[substring-after(.," ") = $student], " ")
 };
-
-
+declare function utils:prepare-message-to($student, $message){
+  concat("./message.sh ",utils:get-student-moodle-id($student), " '", replace($message, "'", "''"), "' #", $student(1)   )
+};
+(: [name, new group, topic, old group, Ausarbeitung/Folien, Gutachten , VORTRAG , Korrekturen] + :)
 declare function utils:get-grouped-student-times(){
   let $times := file:read-text-lines("times"), 
   $override-raw := (if (file:exists("override")) then file:read-text-lines("override") else ())!normalize-space()[.],

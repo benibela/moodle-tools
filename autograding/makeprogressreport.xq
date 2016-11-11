@@ -27,18 +27,28 @@ declare function local:maketime($expected, $actual){
     $expected || ": " || $actual || (if ($actual <= $expected) then "\cellcolor{green}" else "\cellcolor{yellow}")
   else $expected || (if ($expected < $today) then "\cellcolor{red}" else "")
 };
+declare function local:overdue-message($student, $timecol){
+  if (exists($student($timecol)) and contains($student($timecol)(1), "{red}")) then 
+    let $expected := substring-before($student($timecol)(1), "\") return
+    utils:prepare-message-to($student,
+      if ($timecol = 6) then x"Die Abgabe der Ausarbeitung/Vortragsfolien ist überfällig (seit {$expected})."
+      else x"Die Abgabe des Reviews zum Thema {$student($timecol)(2)} ist überfällig (seit {$expected})."
+    )
+  else ()
+};
 let $student-times := utils:get-student-times()
 let $review-files := $review-file-names ! [file:read-text-lines(.) ] 
 let $mapping := file:read-text-lines("studentmapping")
 (: [name, group, topic, old group, [appointment5], [upload6], [final9], [reviewtopic, review time]+ ] :)
 let $student-progress := $student-times[.(1)] ! [ 
   .(1), .(2), .(3), .(4), 
-  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], 
+  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], .(8),
   for $fn at $f in $review-file-names
   let $reviewed := utils:get-reviewed($review-files[$f](), .)
   return [local:maketime($student-times[.(1) = $reviewed(1)](7), $tasks-done($fn)(.(1))), utils:grouped-topic($reviewed)]
 ]
-return utils:latex-wrap((
+return (file:write("overdue.out", join(($student-progress!( local:overdue-message(., 6), local:overdue-message(., 9), local:overdue-message(., 10) ),""), $line-ending)) ,
+utils:latex-wrap((
 "
 % Moodle title = Vorläufige Terminzuordnung
 
@@ -56,8 +66,8 @@ return utils:latex-wrap((
       for $student in $student-progress[.(2) = $groups]
       order by $sortfunc($student)
       return (
-        join(($student(1), local:times($student(5)), local:times($student(6)), local:times($student(7)),local:times($student(8)), local:times($student(9)) ) , "&amp;") || "\\", 
-        join((local:topic(utils:grouped-topic($student)), "","","",local:topic($student(8)(2)), local:topic($student(9)(2)) ) , "&amp;") || "\\\hline\\"
+        join(($student(1), local:times($student(5)), local:times($student(6)), local:times($student(7)),local:times($student(9)), local:times($student(10)) ) , "&amp;") || "\\", 
+        join((local:topic(utils:grouped-topic($student)), "\multicolumn{3}{c}{\small  Vortrag: "||$student(8)||"}",local:topic($student(9)(2)), local:topic($student(10)(2)) ) , "&amp;") || "\\\hline\\"
       )
     return (
     x"\section*{{ {("Themenzuordnung", "Gruppe A", "Gruppe B")[($groupoverride + 1, 1)[1]]} {$addendum} ({count($student-times[.(1) and .(2) = $groups])}) }} ",
@@ -79,3 +89,4 @@ $table(2, "{\small (Sortierung: Zeit)}", function($s){$s(5)(1)})
 
 
 ))
+)

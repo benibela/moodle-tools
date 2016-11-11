@@ -11,13 +11,12 @@ import module namespace utils="studenttopics" at "topiclib.xqm";
 
 
 let $student-times := utils:get-student-times()
-return (
-"\documentclass[10pt,a4paper]{article}
-\usepackage[left=3cm,top=3cm,landscape]{geometry}
-\usepackage[utf8]{inputenc}
-\usepackage[inline]{enumitem}
-% Moodle course = "||$utils:course||"
+return utils:latex-wrap((
+"
 % Moodle title = Vorläufige Terminzuordnung
+
+\usepackage[left=3cm,top=3cm,landscape]{geometry}
+\usepackage[inline]{enumitem}
 
 \newcommand{\xitem}[1][t]{\item {\bf #1}: }
 
@@ -53,8 +52,8 @@ $table((), "{\small (Sortierung: Name)}", function($s){$s(1)}),
 $table((), "{\small (Sortierung: Thema)}", function($s){$s(3)}),
 $table(1, "{\small (Sortierung: Zeit)}", function($s){$s(5)}),
 $table(2, "{\small (Sortierung: Zeit)}", function($s){$s(5)})
-),
-
-
-"\end{document}"
 )
+
+
+
+))
