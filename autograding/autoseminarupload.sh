@@ -54,8 +54,9 @@ export DIR
                 "%Moodle make-assignment=false",
                 "%Moodle section-index="||(for $id in (1 to count($sections)) order by simple-str-sim($sections[$id], $assignment) return $id)[1] - 1)),
              system(x"{$DIR}/moodleupload.sh ""{$uploadInfoFile}"""),
-             for $reviewer in utils:get-reviewers-moodle-id($student) return
-             system(x"{$DIR}/message.sh {$reviewer} ""Das zum Reviewen vorgesehene Thema {$assignmenttitle} wurde abgegeben.""")
+             let $reviewers := utils:get-reviewers-moodle-id($student)
+             for $reviewer at $id in $reviewers return
+             system(x"{$DIR}/message.sh {$reviewer} ""Das zum Reviewen vorgesehene Thema {$assignmenttitle} wurde abgegeben {if (count($reviewers) = 2) then x" (Review {$id})" else ()}.""")
                 )' 
   
 #  || " => " ||
