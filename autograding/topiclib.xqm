@@ -5,6 +5,7 @@ declare variable $utils:topics :=
   let $tabstart := index-of($utils:raw, $utils:raw[contains(., "tabula")][1]) 
   return $utils:raw[position () > $tabstart];
 declare variable $utils:multi-groups := exists($utils:topics[matches(., "Gruppe +[2B]")]);
+declare variable $utils:review-file-names := ("review1", "review2");
 declare function utils:group-name($i){ ("A", "B") [$i]   };
 declare function utils:grouped-topic($topic){ 
   if ($topic instance of xs:string) then $topic
@@ -18,16 +19,19 @@ declare variable $utils:students-normal :=  trace(
       return [$name, $group, $split[1]], "students");
 declare function utils:get-reviewers-moodle-id($topic){
   let $topictitle := "| "||normalize-space(utils:grouped-topic($topic))
-  for $review-file in (1 to 2) ! x"review{.}"
+  for $review-file in $utils:review-file-names
   let $lines := file:read-text-lines($review-file)!normalize-space()
   let $line := $lines[ends-with(., $topictitle)]
   return extract($line, "^[0-9]+")
+};
+declare function utils:get-review-name($review-line){
+  normalize-space(substring-before(substring-after($review-line," "), "|"))
 };
 (: returns the student reviewed by $student :)
 declare function utils:get-reviewed($file, $student){
   let $student := if ($student instance of xs:string) then $student else $student(1)
   let $reviews := if (count($file) = 1 and $file instance of xs:string) then file:read-text-lines($file) else $file
-  let $topic := normalize-space(substring-after($reviews[normalize-space(substring-before(substring-after(.," "), "|")) = $student], "|"))
+  let $topic := normalize-space(substring-after($reviews[utils:get-review-name(.) = $student], "|"))
   return $utils:students-normal[ utils:grouped-topic(.) = $topic ]
 };
 declare function utils:get-student-moodle-id($student){

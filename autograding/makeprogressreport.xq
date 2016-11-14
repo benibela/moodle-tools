@@ -2,8 +2,7 @@ xquery version "3.0";
 import module namespace utils="studenttopics" at "topiclib.xqm";
 declare variable $today := current-date();
 declare variable $tasks := jn:parse-json(file:read-text("tasks.json"));
-declare variable $review-file-names := ("review1", "review2");
-declare variable $tasks-done := for $r in ("paper", "presentation", $review-file-names) return {$r: {| 
+declare variable $tasks-done := for $r in ("paper", "presentation", $utils:review-file-names) return {$r: {| 
   for $line in file:read-text-lines("submissions/old" || $tasks($r))  
   let $split := tokenize($line, "§") 
   return {normalize-space($split[1]): parse-date(tokenize($split[2], ",")[2], "d. mmmm yyyy")}
@@ -37,13 +36,13 @@ declare function local:overdue-message($student, $timecol){
   else ()
 };
 let $student-times := utils:get-student-times()
-let $review-files := $review-file-names ! [file:read-text-lines(.) ] 
+let $review-files := $utils:review-file-names ! [file:read-text-lines(.) ] 
 let $mapping := file:read-text-lines("studentmapping")
 (: [name, group, topic, old group, [appointment5], [upload6], [final9], [reviewtopic, review time]+ ] :)
 let $student-progress := $student-times[.(1)] ! [ 
   .(1), .(2), .(3), .(4), 
   [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], .(8),
-  for $fn at $f in $review-file-names
+  for $fn at $f in $utils:review-file-names
   let $reviewed := utils:get-reviewed($review-files[$f](), .)
   return [local:maketime($student-times[.(1) = $reviewed(1)](7), $tasks-done($fn)(.(1))), utils:grouped-topic($reviewed)]
 ]
