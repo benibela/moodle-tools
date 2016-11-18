@@ -25,7 +25,7 @@ $DIR/getsubmissions.sh
 
 export DIR
 ~/xidel --variable course,user,pass,exercise,titleprepend,DIR \
-          -e 'xquery version "3.0"; 
+          -e 'xquery version "3.0-xidel"; 
             import module namespace utils="studenttopics" at "topiclib.xqm";
             declare function char-delta($s, $c, $i){
               if (substring($s, $i, 1) eq $c) then 0

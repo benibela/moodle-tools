@@ -1,4 +1,4 @@
-xquery version "3.0";
+xquery version "3.0-xidel";
 import module namespace utils="studenttopics" at "topiclib.xqm";
 declare variable $today := current-date();
 declare variable $tasks := jn:parse-json(file:read-text("tasks.json"));

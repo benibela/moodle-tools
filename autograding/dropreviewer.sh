@@ -2,7 +2,7 @@
 
 
 ~/xidel -e "name := '$1'" --xquery '
-xquery version "3.0";
+xquery version "3.0-xidel";
 import module namespace utils="studenttopics" at "topiclib.xqm";
 let $review-files := $utils:review-file-names ! [file:read-text-lines(.)]
 let $student := exactly-one($utils:students-normal[.(1) = $name])

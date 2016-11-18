@@ -1,4 +1,4 @@
-xquery version "3.0";
+xquery version "3.0-xidel";
 (: summary of files
      "times": list of times (2018-01-02)
      "themenassigned.tex": student <-> topic mapping table ("topic & name 1 & name 2")

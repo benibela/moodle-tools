@@ -12,7 +12,7 @@ export course
    'https://moodle.uni-luebeck.de/user/index.php?id={$course}&perpage=5000' \
    -e 'students := (), studentids := ()' \
    -e '<table id="participants"><tr><td><strong>{$studentids[] := extract(a/@href,"id=([0-9]+)",1), $students[] := normalize-space(.)}</strong></td></tr>+</table>'\
-   -e 'xquery version "3.0";
+   -e 'xquery version "3.0-xidel";
        import module namespace utils="studenttopics" at "topiclib.xqm";
       
       let $students-expected := $utils:students-normal(1),

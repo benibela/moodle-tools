@@ -15,7 +15,7 @@ $DIR/getsubmissions.sh
 
 
 ~/xidel  --variable reviewnr,user,pass,exercise,titleprepend,DIR \
-          -e 'xquery version "3.0"; 
+          -e 'xquery version "3.0-xidel"; 
             import module namespace utils="studenttopics" at "topiclib.xqm";
             
             for $submission in unparsed-text-lines("submissions/active"||$exercise)

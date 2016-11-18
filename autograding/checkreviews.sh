@@ -21,7 +21,7 @@ if [[ ! -f studentmapping ]]; then echo call checkstudents to create studentmapp
      {$reviewsg[] := [./thead/(tr[1]/th except tr[1]/(th[1],th[2]))],
       $choserg[] := [./tbody/(tr[2]/td except tr[2]/(td[1],td[2]))!((css("a.username")/normalize-space(),"")[1])]}
    </table>' ]  \
-   '<final/>' -e 'xquery version "3.0";
+   '<final/>' -e 'xquery version "3.0-xidel";
    (:declare function utils:shuffle($seq) {
      if (empty($seq)) then () else
      let $p := x:random(count($seq))+1 
