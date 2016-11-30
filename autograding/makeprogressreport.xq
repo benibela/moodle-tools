@@ -30,7 +30,8 @@ declare function local:overdue-message($student, $timecol){
   if (exists($student($timecol)) and contains($student($timecol)(1), "{red}")) then 
     let $expected := substring-before($student($timecol)(1), "\") return
     utils:prepare-message-to($student,
-      if ($timecol = 6) then x"Die Abgabe der Ausarbeitung/Vortragsfolien ist überfällig (seit {$expected})."
+      if ($timecol = 6) then x"Die Abgabe der Vortragsfolien ist überfällig (seit {$expected})."
+      else if ($timecol = 7) then x"Die Abgabe der Vortragsfolien ist überfällig (seit {$expected})."
       else x"Die Abgabe des Reviews zum Thema {$student($timecol)(2)} ist überfällig (seit {$expected})."
     )
   else ()
@@ -41,12 +42,12 @@ let $mapping := file:read-text-lines("studentmapping")
 (: [name, group, topic, old group, [appointment5], [upload6], [final9], [reviewtopic, review time]+ ] :)
 let $student-progress := $student-times[.(1)] ! [ 
   .(1), .(2), .(3), .(4), 
-  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], .(8),
+  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(6), $tasks-done("paper")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], .(8),
   for $fn at $f in $utils:review-file-names
   let $reviewed := utils:get-reviewed($review-files[$f](), .)
   return [local:maketime($student-times[.(1) = $reviewed(1)](7), $tasks-done($fn)(.(1))), utils:grouped-topic($reviewed)]
 ]
-return (file:write("overdue.out", join(($student-progress!( local:overdue-message(., 6), local:overdue-message(., 9), local:overdue-message(., 10) ),""), $line-ending)) ,
+return (file:write("overdue.out", join(($student-progress!( local:overdue-message(., 6), local:overdue-message(., 7), local:overdue-message(., 10), local:overdue-message(., 11) ),""), $line-ending)) ,
 utils:latex-wrap((
 "
 % Moodle title = Vorläufige Terminzuordnung
@@ -65,8 +66,8 @@ utils:latex-wrap((
       for $student in $student-progress[.(2) = $groups]
       order by $sortfunc($student)
       return (
-        join(($student(1), local:times($student(5)), local:times($student(6)), local:times($student(7)),local:times($student(9)), local:times($student(10)) ) , "&amp;") || "\\", 
-        join((local:topic(utils:grouped-topic($student)), "\multicolumn{3}{c}{\small  Vortrag: "||$student(8)||"}",local:topic($student(9)(2)), local:topic($student(10)(2)) ) , "&amp;") || "\\\hline\\"
+        join(($student(1), local:times($student(5)), local:times($student(6)), local:times($student(8)),local:times($student(10)), local:times($student(11)) ) , "&amp;") || "\\", 
+        join((local:topic(utils:grouped-topic($student)), "\multicolumn{3}{c}{\small  Vortrag: "||$student(9)||"}",local:topic($student(10)(2)), local:topic($student(11)(2)) ) , "&amp;") || "\\\hline\\"
       )
     return (
     x"\section*{{ {("Themenzuordnung", "Gruppe A", "Gruppe B")[($groupoverride + 1, 1)[1]]} {$addendum} ({count($student-times[.(1) and .(2) = $groups])}) }} ",
