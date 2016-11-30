@@ -17,8 +17,8 @@ declare function local:timesFA($timeF,$timeA){
   let $colorF := extract($timeF(1), "cellcolor\{(.*)\}", 1)
   let $colorA := extract($timeA(1), "cellcolor\{(.*)\}", 1)
   return if ($colorF = $colorA) then $timeF(1)
-  else if ($colorF = "red") then "Fol. " || $timeF(1)
-  else if ($colorA = "red") then "Aus. " || $timeA(1)
+  else if ($colorF = "red") then "Fol. " || replace( $timeF(1), "\{red\}", "{orange}")
+  else if ($colorA = "red") then "Aus. " || replace( $timeA(1), "\{red\}", "{orange}")
   else $timeF(1)
 };
 declare function local:topic($topic){
@@ -59,7 +59,7 @@ utils:latex-wrap((
 
 \usepackage[left=3cm,top=3cm,landscape]{geometry}
 \usepackage[inline]{enumitem}
-\usepackage{color,colortbl}
+\usepackage{xcolor,colortbl}
 \usepackage{longtable}
 
 \newcommand{\xitem}[1][t]{\item {\bf #1}: }
