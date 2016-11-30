@@ -11,11 +11,15 @@ declare variable $tasks-done := for $r in ("paper", "presentation", $utils:revie
 declare variable $tasks-done-met := {| for $l in file:read-text-lines("met")[.] let $x := tokenize($l, ",")!normalize-space() return {$x[1]: xs:date($x[2])} |};
 
 declare function local:times($time){
-(:  let $times := $time()
-  return if ($times(2)) then
-    $time(1)
-   else $time(2) || "/" || $time(1):)
   $time(1)
+};
+declare function local:timesFA($timeF,$timeA){
+  let $colorF := extract($timeF(1), "cellcolor\{(.*)\}", 1)
+  let $colorA := extract($timeA(1), "cellcolor\{(.*)\}", 1)
+  return if ($colorF = $colorA) then $timeF(1)
+  else if ($colorF = "red") then "Fol. " || $timeF(1)
+  else if ($colorA = "red") then "Aus. " || $timeA(1)
+  else $timeF(1)
 };
 declare function local:topic($topic){
   if (string-length($topic) < 27) then $topic
@@ -37,6 +41,7 @@ declare function local:overdue-message($student, $timecol){
   else ()
 };
 let $student-times := utils:get-student-times()
+let $dropped := file:read-text-lines("override")[contains(., "dropped")]!substring-before(.,",")
 let $review-files := $utils:review-file-names ! [file:read-text-lines(.) ] 
 let $mapping := file:read-text-lines("studentmapping")
 (: [name, group, topic, old group, [appointment5], [upload6], [final9], [reviewtopic, review time]+ ] :)
@@ -66,7 +71,7 @@ utils:latex-wrap((
       for $student in $student-progress[.(2) = $groups]
       order by $sortfunc($student)
       return (
-        join(($student(1), local:times($student(5)), local:times($student(6)), local:times($student(8)),local:times($student(10)), local:times($student(11)) ) , "&amp;") || "\\", 
+        join(($student(1), local:times($student(5)), local:timesFA($student(6),$student(7)), local:times($student(8)),local:times($student(10)), local:times($student(11)) ) , "&amp;") || "\\", 
         join((local:topic(utils:grouped-topic($student)), "\multicolumn{3}{c}{\small  Vortrag: "||$student(9)||"}",local:topic($student(10)(2)), local:topic($student(11)(2)) ) , "&amp;") || "\\\hline\\"
       )
     return (
@@ -74,7 +79,7 @@ utils:latex-wrap((
     "\begin{longtable}{llccccc}
     \bf Name &amp; \bf Vorbesprechung &amp; \bf Ausarbeitung/Folien &amp; \bf Endfassung &amp; \bf Review 1 &amp; \bf Review 2\\ ",
     $result,
-    "\end{longtable}\pagebreak"
+    "\end{longtable} \textbf{Verschwunden: }" ||(if (not($groupoverride)) then join($dropped, ",  ") else ())|| " \pagebreak"
     )
   }
 
