@@ -3,9 +3,11 @@ import module namespace utils="studenttopics" at "topiclib.xqm";
 declare variable $today := current-date();
 declare variable $tasks := jn:parse-json(file:read-text("tasks.json"));
 declare variable $tasks-done := for $r in ("paper", "presentation", $utils:review-file-names) return {$r: {| 
-  for $line in file:read-text-lines("submissions/old" || $tasks($r))  
+  for $line in file:read-text-lines("submissions/history" || $tasks($r))  
   let $split := tokenize($line, "§") 
-  return {normalize-space($split[1]): parse-date(tokenize($split[2], ",")[2], "d. mmmm yyyy")}
+  let $date := parse-date(tokenize($split[2], ",")[2], "d. mmmm yyyy")
+  group by $name := normalize-space($split[1])
+  return {$name: for $d in $date order by $d ascending return $d}
 |}};
 (: name, date :)
 declare variable $tasks-done-met := {| for $l in file:read-text-lines("met")[.] let $x := tokenize($l, ",")!normalize-space() return {$x[1]: xs:date($x[2])} |};
@@ -35,7 +37,7 @@ declare function local:overdue-message($student, $timecol){
     let $expected := substring-before($student($timecol)(1), "\") return
     utils:prepare-message-to($student,
       if ($timecol = 6) then x"Die Abgabe der Vortragsfolien ist überfällig (seit {$expected})."
-      else if ($timecol = 7) then x"Die Abgabe der Vortragsfolien ist überfällig (seit {$expected})."
+      else if ($timecol = 7) then x"Die Abgabe der Ausarbeitung ist überfällig (seit {$expected})."
       else x"Die Abgabe des Reviews zum Thema {$student($timecol)(2)} ist überfällig (seit {$expected})."
     )
   else ()
@@ -47,7 +49,7 @@ let $mapping := file:read-text-lines("studentmapping")
 (: [name, group, topic, old group, [appointment5], [upload6], [final9], [reviewtopic, review time]+ ] :)
 let $student-progress := $student-times[.(1)] ! [ 
   .(1), .(2), .(3), .(4), 
-  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1)))], [local:maketime(.(6), $tasks-done("paper")(.(1)))], [local:maketime(.(9), $tasks-done("presentation")(.(1)))], .(8),
+  [local:maketime(.(5), $tasks-done-met(.(1)))], [local:maketime(.(6), $tasks-done("presentation")(.(1))[1])], [local:maketime(.(6), $tasks-done("paper")(.(1))[1])], [local:maketime(.(9), $tasks-done("paper")(.(1))[position()>1][last()])], .(8),
   for $fn at $f in $utils:review-file-names
   let $reviewed := utils:get-reviewed($review-files[$f](), .)
   return [local:maketime($student-times[.(1) = $reviewed(1)](7), $tasks-done($fn)(.(1))), utils:grouped-topic($reviewed)]

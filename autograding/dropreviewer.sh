@@ -28,7 +28,7 @@ return (
     return (file:write-text-lines($utils:review-file-names[$reviewnr] || ".new", $newlines), $newlines)
   ),
   
-  
+  "",
   for $r at $i in $reviewers return (
     if (utils:grouped-topic($r) = utils:grouped-topic($reviewed[$i])) then ("Consistence check failed: ", $r, "cannot review his own topic") else (),
     if ($review-files[position() != $i]()[utils:get-review-name(.) = $r(1)]!normalize-space(substring-after(., "|")) = utils:grouped-topic($reviewed[$i])) then ("Consistence check failed: ", $r, "cannot review a topic twice") else ()

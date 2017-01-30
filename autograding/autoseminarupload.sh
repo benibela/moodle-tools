@@ -17,10 +17,13 @@ export titleprepend
 $DIR/getsubmissions.sh 
 
 
-~/xidel --variable course,user,pass \
-          'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
-          'https://moodle.uni-luebeck.de/course/view.php?id={$course}' \
-          -e 'css("h3.sectionname")' > tmpsections$course
+if [ ! -e tmpsections$course ]; then
+  ~/xidel --variable course,user,pass \
+            'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
+            'https://moodle.uni-luebeck.de/course/view.php?id={$course}' \
+            -e 'css("h3.sectionname")' > tmpsections$course
+fi
+
             
 
 export DIR
