@@ -1,4 +1,5 @@
 #!/bin/bash
+#Im Moodle muss die Zahl der angezeigten Abgaben auf 100 gesetzt werden (oder die Zahl der Studenten), da nur die erste Seite heruntergeladen wird.
 if [[ -z "$exercise" ]]; then echo "you need to set an exercise (id from exercise grading view)";exit;fi
 
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
@@ -15,7 +16,7 @@ touch submissions/history$exercise
 
 comm -23 submissions/new$exercise submissions/old$exercise > submissions/active$exercise
 
-cat submissions/new$exercise submissions/history$exercise > submissions/history$exercise
+cat submissions/new$exercise >> submissions/history$exercise
 sort -u submissions/history$exercise -o submissions/history$exercise
 
 cp submissions/new$exercise /tmp/new$exercise$(date +"%Y%mT%d%H%M%S")
