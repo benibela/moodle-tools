@@ -28,6 +28,8 @@ declare variable $manually-confirmed :=
              let $start := $headers[$i]+1 return {$norm-header: subsequence($lines, $start, ($headers[$i + 1], count($lines)+1)[1] - $start) }  |};
 declare variable $tasks-done-met := {| for $l in $manually-confirmed("meeting") let $x := tokenize($l, ",")!normalize-space() return {$x[1]: xs:date($x[2])} |};
 declare variable $tasks-done-final := $manually-confirmed("final paper");
+declare variable $review-numbers := (1 to count($utils:review-file-names));
+
 
 declare function local:times($time){
   $time(1)
@@ -57,6 +59,15 @@ declare function local:maketimefinal($name, $expected, $actual){
     else $r || "\cellcolor" || $finalcolor
   ) else $r
 };
+declare function local:final-students($students){
+  for $student in $students 
+  where every $b in ( contains($student(8)(1), $finalcolor), $review-numbers ! matches($student(9+.)(1), "\{(green|yellow|orange)\}") ) 
+        satisfies $b 
+  return $student
+};
+declare function local:final-message($student){
+  utils:prepare-message-to($student, "FYI: Du hast das Seminar nun bestanden")
+};
 declare function local:overdue-message($student, $timecol){
   if (exists($student($timecol)) and contains($student($timecol)(1), "{red}")) then 
     let $expected := substring-before($student($timecol)(1), "\") return
@@ -82,7 +93,8 @@ let $student-progress := $student-times[.(1)] ! [
   let $reviewed := utils:get-reviewed($review-files[$f](), .)
   return [local:maketime($student-times[.(1) = $reviewed(1)](7), $tasks-done($fn)(.(1))), utils:grouped-topic($reviewed)]
 ]
-return (file:write("overdue.out", join(($student-progress!( local:overdue-message(., 6), local:overdue-message(., 7), local:overdue-message(., 10), local:overdue-message(., 11) ),""), $line-ending)) ,
+return (file:write("overdue.out", join(($student-progress!( local:overdue-message(., 6), local:overdue-message(., 7), local:overdue-message(., 10), local:overdue-message(., 11) ),""), $line-ending)) , 
+file:write("finalists.out", join((let $old := if (file:exists("finalists.old")) then file:read-text-lines("finalists.old") else () return local:final-students($student-progress)!local:final-message(.)[not(. = $old)],"cat finalists.out >> finalists.old","",""), $line-ending) ),
 utils:latex-wrap((
 "
 % Moodle title = Vorläufige Terminzuordnung
@@ -98,7 +110,6 @@ utils:latex-wrap((
   let $table := function($groupoverride, $addendum, $sortfunc) {
     let $groups := if ($groupoverride) then $groupoverride else (1 to (if ($utils:multi-groups) then 2 else 1))
     let $curgroup := $student-progress[.(2) = $groups]
-    let $review-numbers := (1 to count($utils:review-file-names))
     let $result := 
       for $student in $curgroup
       order by $sortfunc($student)
@@ -115,7 +126,7 @@ utils:latex-wrap((
     "\end{longtable}" ||
     (if (not($groupoverride)) then 
       " \textbf{Verschwunden: }" || join($dropped, ",  ") 
-      ||"\\\hrulefill\\\textbf{Bestanden: }" || join(for $student in $curgroup where every $b in ( contains($student(8)(1), $finalcolor), $review-numbers ! matches($student(9+.)(1), "\{(green|yellow|orange)\}") ) satisfies $b return $student(1), ",  ")
+      ||"\\\hrulefill\\\textbf{Bestanden: }" || join(local:final-students($curgroup)(1), ",  ")
      else ()
       )
     || " \pagebreak"
