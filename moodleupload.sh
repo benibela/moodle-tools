@@ -23,7 +23,9 @@ fi
   for tumbling window $cmd in ($includes, $sheet) ! extract ( .,  "\\def\\([^{]+)\{(.*)\}", (1,2) , "*") start at $i when true() end at $j when $j - $i > 0 return
     $tex-defs($cmd[1]) := local:tex-replace($cmd[2], $tex-defs, 100),
   $option := function($name, $default) {
-    let $res := extract($sheet, "% *Moodle +"||$name||" *= *(.*)", 1) return
+    let $env := environment-variable("moodle_"||translate($name,"-","_"))
+    return if ($env) then $env
+    else let $res := extract($sheet, "% *Moodle +"||$name||" *= *(.*)", 1) return
     if ($res) then $res 
     else ( $includes ! extract(., "% *Moodle +"||$name||" *= *(.*)", 1)[.], $default) [1]
   },
