@@ -7,3 +7,4 @@ if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
 #export course
 export user
 export pass
+xidel=~/xidel

@@ -1,34 +1,39 @@
 #!/bin/bash
 
 
+DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
+source "$DIR/common.sh"
 
-cp usermap /tmp
-sort < /tmp/usermap | uniq > usermap
+sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissions/new* |sort|uniq > usermap
 
-~/xidel '<empty/>' -e '$usermap := {| unparsed-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(substring-after(.," "), " ")} |} ' \
+~/xidel --verbose '<empty/>' -e '
+  $usermap := {| file:read-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
+  $tasks := {"74976": "maximum_bench", "75102": "prefix_bench", "75433": "pj_bench", "74978": "sort_bench", "0": "lenz_bench", "0": "lr_bench"}'\
         --variable 'user,pass'  \
         'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})'  \
-        '<empty/>' -f '(24510,24514,24515,25398,25399,26051) ! x"https://moodle.uni-luebeck.de/course/modedit.php?update={.}&return=0&sr=0"' \
+        '<empty/>' -f '$tasks()[. ne "0"] ! x"https://moodle.uni-luebeck.de/course/modedit.php?update={.}&return=0&sr=0"' \
         -f 'xquery version "3.0-xidel"; let 
  $id := extract($url, "update=([0-9]+)", 1), 
- $task := {"24510": "maximum_bench", "24514": "prefix_bench", "24515": "pj_bench", "25398": "sort_bench", "25399": "lenz_bench", "26051": "lr_bench"}($id) return 
+ $task := $tasks($id) 
+ where file:exists("./results/" || $task)
+ return 
  form((//form)[1], {"introeditor[text]": inner-xml(<p> <h3>Problem {$task}</h3> 
    <p>Die jeweils besten Speedups von neun Läufen auf Alan. </p>
    <table rules="all" style="text-align: right;" border="0">  { (
      <tr><td>Name</td> { (1 to 9) ! <td>{.}</td>  } <td>Median</td> </tr>,
      for $res in 
-     for $file in system("ls  ./results/" || $task) ! tokenize(., $line-ending) 
-     let $results := unparsed-text-lines("file://./results/"|| $task||"/"||$file)
+     for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) 
+     let $results := file:read-text-lines("./results/"|| $task||"/"||$file)
      return <tr><td>{$usermap($file)}</td>{
                ($results, (for $r in $results order by number($r) return $r)[ 5 ]) ! <td>{.}</td>                
             }</tr> 
      order by number($res/td[last()] ) descending return $res
    )}   </table> </p>) }) '  \
-         'https://moodle.uni-luebeck.de/course/modedit.php?update=25266&return=0&sr=0' \
+         'https://moodle.uni-luebeck.de/course/modedit.php?update=75003&return=0&sr=0' \
          -f 'xquery version "3.0-xidel"; form((//form)[1], {"introeditor[text]": join(("<h3>Hall of Fail</h3><p>Fehlgeschlagene Programme:</p>",
      let $task := "failed"
-     for $file in system("ls  ./results/" || $task) ! tokenize(., $line-ending) 
-     return ($usermap($file), unparsed-text("file://./results/"|| $task||"/"||$file))
+     for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) [normalize-space()]
+     return ($usermap($file), file:read-text("./results/"|| $task||"/"||$file))
    )) } )
         ' -e //title
     

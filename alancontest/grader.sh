@@ -2,7 +2,7 @@
 CURPATH=$PWD
 RESULTS=$CURPATH/results
 mkdir -p $RESULTS/failed
-for submission in $(find submissions/ | grep "[.]c"); do 
+for submission in $(find submissions/files | grep "[.]c"); do 
   [[ $submission =~ ([0-9]+)/([^.]*)(_par.c)? ]]
   ID=${BASH_REMATCH[1]}
   TASK=${BASH_REMATCH[2]}
@@ -16,7 +16,7 @@ for submission in $(find submissions/ | grep "[.]c"); do
   rm -rf grading/
   mkdir grading
   cp files/benchmarker.c  files/Makefile files/${TASK}_generate.c files/${TASK}_seq.c grading/
-  cp submissions/$ID/${TASK}_par.c grading
+  cp submissions/files/$ID/${TASK}_par.c grading
   cd grading
   make $TASK 2>&1 | tee compilemessages
   if [[ -e ./$TASK ]]; then
@@ -39,7 +39,4 @@ for submission in $(find submissions/ | grep "[.]c"); do
     cat compilemessages >> $RESULTS/failed/$ID
   fi
   cd $CURPATH
-  rm -rf submissions/$ID
-  #if [[ "$ID" -e "prefix_bench_par" ]]; then 
-  #exit
 done
