@@ -54,6 +54,16 @@ fi
     -e '()' \
   ]  \
   [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=resource&type=&course={$course}&section={$section}&return=0&sr=0' -e 'infoForm := form(//form[contains(@action, "modedit")], {"name": $title, "introeditor[text]": $description})' -f '//noscript//object/@data[contains(., "env=filemanager")]' -f '//a/@href[contains(., "filepicker")]'  -f '//a[contains(., "hochladen")]'  -f 'form(//form, {"repo_upload_file": {"file": $uploadFilename}})' -f '//a/@href[not(starts-with(., "#"))]' -f '$infoForm' -e 'css("p.activity")[last()]' ] \
-  [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=assign&type=&course={$course}&section={$section}&return=0&sr=0' -f 'form((//form)[1], {"name": $assignmenttitle, "introeditor[text]": $assignmenttitle, "duedate[day]": $sdeadline[1], "duedate[month]": $sdeadline[2], "duedate[year]": $sdeadline[3], "duedate[hour]":  $hour, "grade[modgrade_point]": $spoints, "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else ""})[$make-assignment]' -e 'css("span.instancename") [contains(., string($snumber))]' -e 'span.error' ]
+  [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=assign&type=&course={$course}&section={$section}&return=0&sr=0' \
+     -f 'form((//form)[1], {
+       "name": $assignmenttitle, 
+       "introeditor[text]": $assignmenttitle, 
+       "duedate[day]": $sdeadline[1], 
+       "duedate[month]": $sdeadline[2], 
+       "duedate[year]": $sdeadline[3], 
+       "duedate[hour]":  $hour, 
+       "grade[modgrade_point]": $spoints, 
+       "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else ""})[$make-assignment]' \
+     -e 'css("span.instancename") [contains(., string($snumber))]' -e 'span.error' ]
 
  
