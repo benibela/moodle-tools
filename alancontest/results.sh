@@ -6,7 +6,7 @@ source "$DIR/common.sh"
 
 sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissions/new* |sort|uniq > usermap
 
-~/xidel --verbose '<empty/>' -e '
+~/xidel '<empty/>' -e '
   $usermap := {| file:read-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
   $tasks := {"74976": "maximum_bench", "75102": "prefix_bench", "75433": "pj_bench", "74978": "sort_bench", "0": "lenz_bench", "0": "lr_bench"}'\
         --variable 'user,pass'  \
