@@ -8,7 +8,7 @@ sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissio
 
 ~/xidel '<empty/>' -e '
   $usermap := {| file:read-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
-  $tasks := {"74976": "maximum_bench", "75102": "prefix_bench", "75433": "pj_bench", "74978": "sort_bench", "0": "lenz_bench", "0": "lr_bench"}'\
+  $tasks := {"74976": "maximum_bench", "75102": "prefix_bench", "75433": "pj_bench", "74978": "sort_bench", "76750": "lenz_bench", "0": "lr_bench"}'\
         --variable 'user,pass'  \
         'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})'  \
         '<empty/>' -f '$tasks()[. ne "0"] ! x"https://moodle.uni-luebeck.de/course/modedit.php?update={.}&return=0&sr=0"' \
@@ -33,7 +33,7 @@ sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissio
          -f 'xquery version "3.0-xidel"; form((//form)[1], {"introeditor[text]": join(("<h3>Hall of Fail</h3><p>Fehlgeschlagene Programme:</p>",
      let $task := "failed"
      for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) [normalize-space()]
-     return ($usermap($file), file:read-text("./results/"|| $task||"/"||$file))
+     return ("<h4>", $usermap($file), "</h4><pre>", file:read-text("./results/"|| $task||"/"||$file),"</pre>")
    )) } )
         ' -e //title
     

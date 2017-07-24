@@ -5,7 +5,7 @@ source "$DIR/common.sh"
 mkdir -p pastsubmissions
 while true; do
   if [[ -z "$( who  | grep -Ev 'root' | grep -Ev 'benitovanderzand +pts/3'|grep xxx)" ]]; then 
-     exercise=75103,74977,74979,75434 $DIR/getsubmissions.sh
+     exercise=75103,74977,74979,75434,76751 $DIR/getsubmissions.sh
      for submission in submissions/files/*; do
        if diff -q $submission/*.c  past$submission/*.c ; then echo $submission already processed; rm -rf $submission; fi
      done
