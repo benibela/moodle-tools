@@ -1,0 +1,11 @@
+
+remove num_threads from all parallel_implementation
+
+only check first element for max (let generate return a number of elements to check, 1 for max, n for all other)
+
+lenz ids too big. exercise sheet says 1..log, but generator creates 0..log
+
+exercise moodle id configuration in separate file,  text  ("Die besten...")
+
+
+
