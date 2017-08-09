@@ -9,7 +9,7 @@ export pass
 xidel=~/xidel
 
 function moodle {
-  $xidel --variable user,pass [ 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' ] "$@"
+  $xidel --variable user,pass [ 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
 }
 
 function moodlewithcourse {
