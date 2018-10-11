@@ -13,7 +13,7 @@ export course
    -e 'students := (), studentids := ()' \
    -e '<table id="participants"><tr><td><strong>{$studentids[] := extract(a/@href,"id=([0-9]+)",1), $students[] := normalize-space(.)}</strong></td></tr>+</table>'\
    -e 'xquery version "3.0-xidel";
-       import module namespace utils="studenttopics" at "topiclib.xqm";
+       import module namespace utils="studenttopics" at "topiclib.xqm", "'$DIR/autograding/'topiclib.xqm";
       
       let $students-expected := $utils:students-normal(1),
           $students-missing := (for $s in $students-expected[not(. = $students)] order by $s return $s),

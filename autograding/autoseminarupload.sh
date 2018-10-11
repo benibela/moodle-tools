@@ -1,4 +1,4 @@
- #!/bin/sh
+#!/bin/bash
 if [[ -z "$course" ]]; then echo need course; exit; fi
 if [[ -z "$exercise" ]]; then echo need exercise; exit; fi
 #if [[ -z "$assignmentfile" ]]; then echo "need assignmentfile (3 columns, date & name & termin\\\\)"; exit; fi
@@ -29,7 +29,7 @@ fi
 export DIR
 ~/xidel --variable course,user,pass,exercise,titleprepend,DIR \
           -e 'xquery version "3.0-xidel"; 
-            import module namespace utils="studenttopics" at "topiclib.xqm";
+            import module namespace utils="studenttopics" at "topiclib.xqm", "'$DIR/autograding/'topiclib.xqm";
             declare function char-delta($s, $c, $i){
               if (substring($s, $i, 1) eq $c) then 0
               else min(  ( (1 to $i - 1)[ substring($s, ., 1) eq $c ] ! ($i - .), ($i + 1 to string-length($s))[ substring($s, ., 1) eq $c ] ! (. - $i ) , 2 * string-length($s))   )
@@ -41,6 +41,11 @@ export DIR
             declare function simple-name-sim($s, $t) {
               let $st := tokenize($s, " "), $tt := tokenize($t, " ")
               return simple-str-sim($st[1], $tt[1]) + simple-str-sim($st[count($st)], $tt[count($tt)])
+            }; 
+            declare function simple-section-sim($section, $name) {
+              let $s := normalize-space(if (contains($section, ":")) then substring-before($section, ":") else $section)
+              let $t := normalize-space($name)
+              return simple-name-sim($s, $t)
             }; 
             let $sections := unparsed-text-lines("tmpsections" || $course)
             let $history := if (file:exists("submissions/history"||$exercise)) then file:read-text-lines("submissions/history"||$exercise)![tokenize(., "§")!normalize-space()] else ()
@@ -59,7 +64,7 @@ export DIR
                ("%Moodle title="||$assignmenttitle, 
                 "%Moodle file-to-upload="||file:resolve-path($filename), 
                 "%Moodle make-assignment=false",
-                "%Moodle section-index="||(for $id in (1 to count($sections)) order by simple-str-sim($sections[$id], $assignment) return $id)[1] - 1)),
+                "%Moodle section-index="||(for $id in (1 to count($sections)) order by simple-section-sim($sections[$id], $assignment) return $id)[1] - 1)),
              system(x"{$DIR}/moodleupload.sh ""{$uploadInfoFile}"""),
              let $reviewers := utils:get-reviewers-moodle-id($student)
              for $reviewer at $id in $reviewers return

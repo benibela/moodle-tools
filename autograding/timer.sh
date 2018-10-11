@@ -1,5 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )/.."
+if [[ ! -f "$DIR/common.sh" ]]; then DIR=~/moodle; fi
 source "$DIR/common.sh"
 
 while true; do
