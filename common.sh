@@ -7,9 +7,10 @@ if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
 export user
 export pass
 xidel=~/xidel
+export baseurl='https://moodle.uni-luebeck.de/'
 
 function moodle {
-  $xidel --variable user,pass [ 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
+  $xidel --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
 }
 
 function moodlewithcourse {
