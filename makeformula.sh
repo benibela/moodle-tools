@@ -16,7 +16,7 @@ moodlewithcourse 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' -f
 ' | $xidel - --xquery '
   let $lines := x:lines($raw)[contains(., "min")]   
   let $allowedtofail := 2
-  return ( x"=min( {join($lines, "+")} - {count($lines) - $allowedtofail + 2} ; 2) ",
+  return ( x"=min( {join($lines, "+")} - {count($lines) - $allowedtofail - 2} ; 2) ",
   "","","Anzahl an relevanten Blättern: "||count($lines))
 '
 
