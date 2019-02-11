@@ -8,7 +8,7 @@ source "$DIR/common.sh"
 moodlewithcourse 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' -f '//a[contains(@href, "mod/assign/view")]/replace(@href, "mod/assign/view.php[?]id=", "course/modedit.php?update=")'  \
    --xquery 'let $p := x:request-decode(form(//form[contains(@action, "modedit")])).params
              let $id := ($p("cmidnumber")[.], "MISSING ID")[1]
-             where $p("visible") eq "1" and not(contains($id, "Klausur"))
+             where $p("visible") ne "0" and not(contains($id, "Klausur")) and not (contains($p("name"), "Klausurtermin"))
              let $maxpoints := $p("grade[modgrade_point]")
              let $okpoints := $p("gradepass")
              return
