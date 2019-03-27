@@ -22,7 +22,7 @@ function assert(b, m) {
   if (!b) { alert("assert failure: "+m); throw "assert"; }
 }
 
-String.contains = function(s) { return this.indexOf(s) >= 0; }
+String.prototype.contains = function(s) { return this.indexOf(s) >= 0; }
 
 function selectOptionValue(select, value){
   for (var i=0; i<select.options.length; i++)
@@ -287,11 +287,25 @@ switch (page) {
            throw "Grade not found: " + optionText + " in "+select.innerHTML;
         }
 
-        function findUser(users, data){
+        function findUser(users, data, onfuzzy){
+          function normalize(s) { return s.replace(/[ -]/g, "").replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/ø/g,"oe"); }
           var fn = data.firstName ? data.firstName.toLowerCase() : null;
           var ln = data.lastName ? data.lastName.toLowerCase() : null;
+          var fullname = fn + " " + ln;
+          var shortname = fn.replace(/ .*/, "") + " " + ln;
+          var fullnameNoPunctation = normalize(fullname);
+          var shortnameNoPunctation = normalize(shortname);
+          
+          var fallback = -1;
           for (var i=0;i<users.length;i++){
             var tc = users[i].textContent.toLowerCase();
+            if (tc == fullname) return i;
+            if (tc == shortname) fallback = i;
+            else {
+              tc = normalize(tc);
+              if (tc == fullnameNoPunctation || tc == shortnameNoPunctation) fallback = i;
+            }
+            /*
             if (fn) {
               if (tc.indexOf(fn) < 0 &&
                   tc.indexOf(fn.replace(/ +/g, "-")) < 0 &&
@@ -301,19 +315,35 @@ switch (page) {
               if (tc.indexOf(ln) < 0 &&
                   tc.indexOf(ln.replace(/ +/g, "-")) < 0 &&
                   tc.indexOf(ln.replace(/-/g, " ")) < 0) continue;
-            }
-            return i;
+            }*/
           }
-          throw "User name found: "+JSON.stringify(data);
+          if (fallback >= 0) {
+            if (onfuzzy) onfuzzy(data.raw + "\nto: " + users[fallback].textContent);
+            return fallback;
+          }
+          //throw "User name not found: "+JSON.stringify(data);
+          return -1;
         }
 
-        function setScores(data){
+        function setScores(data, onerror, onfuzzy){
+        /* data is array of 
+          {firstName: 
+           lastName: 
+           grade:
+           scores:  []
+           score:
+           }
+        */
+          
           var as = t.getElementsByTagName("a");
           var users = [];
           for (var i=0;i<as.length;i++) 
             if (as[i].href.indexOf("user") >= 0) users.push(as[i]);
+          var errors = 0;
           for (var i=0;i<data.length;i++) {
-            var row = users[findUser(users,data[i])].parentNode.parentNode;
+            var uid = findUser(users,data[i], onfuzzy);
+            if (uid < 0) { onerror(data[i].raw); errors++; continue; }
+            var row = users[uid].parentNode.parentNode;
             var gradings = row.getElementsByClassName("quickgrade");
             for (var j=0;j<gradings.length;j++) {
               if (gradings[j].nodeName == "INPUT") gradings[j].value = data[i].grade;
@@ -321,7 +351,7 @@ switch (page) {
               else if (gradings[j].nodeName == "SELECT") selectOptionGrade(gradings[j], data[i].grade);
             }
           }
-          alert("Results imported for " + data.length + " students");
+          alert("Results imported for " + (data.length - errors) + "/" + data.length + " students");
         }
 
         function parseExamResults(dump){
@@ -363,15 +393,94 @@ switch (page) {
           return res
         }
            
+        function parseExamResultsNew(dump){
+           var REGEX_MATRIKEL_NR = /^[0-9]{6}$/;
+           var REGEX_GRADE = /^[0-9]\.[0-9]$/;
+           var REGEX_NAME = /^[^0-9]+/;
+           var REGEX_PO = /^[WS]S[0-9]+|PO\s*[0-9]$/;
+           var REGEX_NUMERIC = /^[0-9]+$/;
+          
+           var result = [];
+           var data = dump.trim().split(/[\n\r]+/).forEach(function(row){
+             var trow = row.trim();
+             if (!trow) return;
+             var cur = {"firstName": "", "lastName": "", "grade": "", "scores": [], "score": ""};
+             var phase = 0;
+             var runningSum = 0;
+             trow.split(/\t/).forEach(function(rv){
+               var v = rv.trim();
+               function abort(s) { alert("Unexpected \"" + v+"\" in \"" + row+"\""+s+"\ncur:"+JSON.stringify(cur)) }
+               function expectNothing() { if (v != "") abort("nothing"); }
+               switch (phase) {
+                 case 0: 
+                   if (REGEX_GRADE.test(v)) /*fallthrough*/; 
+                   else {
+                     if (REGEX_MATRIKEL_NR.test(v)) phase++; else expectNothing();
+                     break;
+                   }
+                 case 1: 
+                   if (REGEX_GRADE.test(v)) {
+                     cur.grade = v;
+                     phase = 2;
+                   } else expectNothing()
+                   break;
+                 case 2: 
+                   if (REGEX_NAME.test(v)) {
+                     cur.lastName = v;
+                     phase = 3;
+                   } else expectNothing()
+                   break;
+                 case 3: 
+                   if (REGEX_NAME.test(v)) {
+                     cur.firstName = v;
+                     phase = 4;
+                     break;
+                   } else expectNothing()
+                   break;
+                 case 4: 
+                   if (REGEX_NUMERIC.test(v))  { cur.scores.push(v); runningSum += v*1; }
+                   else if (v == "") phase = 5; 
+                   //else  abort()
+                   break;
+                 case 5: 
+                   if (REGEX_NUMERIC.test(v)) { cur.score = v; if (runningSum != v) abort("sum mismatch: "+runningSum+ " " + v); phase=6; }
+                   else expectNothing();
+                   break;
+                 default:
+                   if (v != "kritisch") expectNothing()
+               }
+             });
+             if (!cur.score && cur.scores.length > 2 && cur.scores[cur.scores.length - 1] * 2 == runningSum) 
+               cur.score = cur.scores.pop();
+             if (cur.score) {
+               cur.raw = trow;
+               result.push(cur);
+             } else alert("confusing row: "+row);
+           }); 
+          return result
+        }
        
         t.parentNode.parentNode.insertBefore(document.createElement("br"), t.parentNode.nextSibling);
+        var importtextarea = document.createElement("textarea");
+        t.parentNode.parentNode.insertBefore(importtextarea, t.parentNode.nextSibling);
         var imp = document.createElement("button");
         t.parentNode.parentNode.insertBefore(imp, t.parentNode.nextSibling);
         imp.textContent = "import...";
         imp.addEventListener("click", function(e){
           e.preventDefault();
           try {
-            setScores(parseExamResults(prompt("Exam results:")));
+            var parsed = parseExamResultsNew(importtextarea.value);
+            var fuzzy = "";
+            var errors = "";
+            setScores(parsed, function(m) {
+              //alert(m);
+              errors += m + "\n";
+            }, function(m) {
+              fuzzy += m + "\n";
+            });//prompt("Exam results:")));
+            if (fuzzy) fuzzy = "\n\nFUZZY:\n" + fuzzy;
+            if (errors) errors = "\n\nNOT FOUND:\n" + errors;
+            importtextarea.value = errors + "\n" + fuzzy;
           } catch (e) {
             alert(e);
             throw e
@@ -904,4 +1013,3 @@ called = 1;
   "responseType": "document"
   });
 }*/
-
