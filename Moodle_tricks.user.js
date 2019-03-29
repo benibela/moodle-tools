@@ -395,7 +395,7 @@ switch (page) {
            
         function parseExamResultsNew(dump){
            var REGEX_MATRIKEL_NR = /^[0-9]{6}$/;
-           var REGEX_GRADE = /^[0-9]\.[0-9]$/;
+           var REGEX_GRADE = /^[0-9][.,][0-9]$/;
            var REGEX_NAME = /^[^0-9]+/;
            var REGEX_PO = /^[WS]S[0-9]+|PO\s*[0-9]$/;
            var REGEX_NUMERIC = /^[0-9]+$/;
@@ -420,7 +420,7 @@ switch (page) {
                    }
                  case 1: 
                    if (REGEX_GRADE.test(v)) {
-                     cur.grade = v;
+                     cur.grade = v.replace(",",".");
                      phase = 2;
                    } else expectNothing()
                    break;
