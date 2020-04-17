@@ -8,7 +8,7 @@ export year=$(date +%Y)
 
 for y in $(seq $year $((year+1))); do 
   if [[ ! -s $cache/holidays$y ]]; then
-    $xidel "https://sec.ipty.de/feiertag/api.php?do=getFeiertage&loc=SH&jahr=$y" --input-format json -e 'let $j := $json() return {
+    $xidel "https://ipty.de/feiertag/api.php?do=getFeiertage&loc=SH&jahr=$y" --input-format json -e 'let $j := $json() return {
       "dates": $j?date!parse-date(.), 
       "titles": $j?title, 
       "combined": $j!{"date": parse-date(?date), "title": ?title} }' > $cache/holidays$y
