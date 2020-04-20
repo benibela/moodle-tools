@@ -1,4 +1,7 @@
 
+MOODLEDIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
+
+
 
 if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); fi
 if [[ -z "$user" ]]; then echo Need moodle \$user; exit; fi
@@ -10,7 +13,7 @@ xidel=~/xidel
 export baseurl='https://moodle.uni-luebeck.de/'
 
 function moodle {
-  $xidel --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
+  $xidel --module $MOODLEDIR/moodle.xqm --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
 }
 
 function moodlewithcourse {
