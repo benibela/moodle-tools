@@ -51,7 +51,7 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
   $additionalUploads := extract($sheet, "% *Moodle upload (.*)", 1, "*"),
   $vpls := extract($sheet, "% *Moodle vpl (.*)", 1, "*")
   '  \
-   'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
+   'https://moodle.uni-luebeck.de/' -f 'form((//form)[1], {"username": $user, "password": $pass})' \
   [ 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' --allow-repetitions \
     -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe") and matches(.., "Übungsblatt|Exercise +sheet")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
     -e '()' \
@@ -78,8 +78,13 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
    {"vpls": array{$vpls!{"filename": file:resolve-path(.)}}}
    ), {"duplicates": "combine"})
   ')
+
+echo "Upload parameters: (start)" 
   
 echo "$uploads"
+
+echo "parameters end"
+
 
 
 
