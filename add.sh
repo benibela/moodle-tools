@@ -7,7 +7,7 @@
 #   description
 #   descriptionformat
 #   $1            -> the thing to add
-#                    e.g. url, etherpadlite, moodleoverflow
+#                    e.g. label, url, etherpadlite, moodleoverflow
 #   $2            -> additional options (url encoded or JSON)
 
 thingtoadd=$1
