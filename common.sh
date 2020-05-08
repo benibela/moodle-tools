@@ -13,7 +13,13 @@ xidel=~/xidel
 export baseurl='https://moodle.uni-luebeck.de/'
 
 function moodle {
-  $xidel --module $MOODLEDIR/moodle.xqm --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' ] "$@"
+  if test "`find ~/.moodlecookies -mmin -5`"; then
+    $xidel --module $MOODLEDIR/moodle.xqm --variable user,pass,baseurl --load-cookies ~/.moodlecookies  "$@"
+  else
+    $xidel --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' --save-cookies ~/.moodlecookies ] 
+    moodle "$@"
+  fi
+
 }
 
 function moodlewithcourse {
