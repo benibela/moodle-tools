@@ -32,10 +32,12 @@ cp submissions/new$exercise submissions/old$exercise
 
 
 
-~/xidel -e "\$lines := unparsed-text-lines('submissions/active$exercise') ! extract(., '[^§]+\$') ! normalize-space()" \
+~/xidel -e 'declare function local:url2dir($u) { "submissions/files/" || extract($url, "([0-9]+/[^/?]+)([?].*)?$", 1)} ;
+        $lines := unparsed-text-lines("submissions/active'$exercise'") ! extract(., "[^§]+$") ! normalize-space(),
+        $lines ! ( try { file:delete(local:url2dir(.), true()) } catch * {()})' \
         --load-cookies tmpsession \
         [ -f '$lines[contains(., "assignsubmission_file")] ' \
-        --download  'submissions/files/{extract($url, "([0-9]+/[^/?]+)([?].*)?$", 1)}' ]	 \
+        --download  '{local:url2dir($url)}' ]	 \
         [ -f '$lines[contains(., "plugin=onlinetext")] ' \
         -e '$path := x"submissions/files/{extract($url, "sid=(\d+)", 1)}", file:create-dir($path), file:write-text($path || "/onlinetext.html", outer-html(css(".submissionfull")))' ]
 
