@@ -22,7 +22,7 @@ for submission in $(find submissions/files | grep "[.]c"); do
   if [[ -e ./$TASK ]]; then
     mkdir -p $RESULTS/$TASK
     for run in {1..9}; do
-      if timeout -k 15m 10m ./$TASK > log; then 
+      if timeout -k 15m 10m ./$TASK > log 2> errlog; then 
         tail -1 log |  awk '{print $5}' | tee -a $RESULTS/$TASK/$ID
       else
         if [[ $? -eq 124 ]]; then 
@@ -31,6 +31,7 @@ for submission in $(find submissions/files | grep "[.]c"); do
         else
           cp log $RESULTS/failed/$ID
         fi
+	cat errlog >> $RESULTS/failed/$ID
         break
       fi
     done;
@@ -39,4 +40,6 @@ for submission in $(find submissions/files | grep "[.]c"); do
     cat compilemessages >> $RESULTS/failed/$ID
   fi
   cd $CURPATH
+  cp -r submissions/files/$ID pastsubmissions/files/
+  rm -rf submissions/files/$ID
 done
