@@ -3,12 +3,15 @@
 
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
+source "$DIR/config.sh"
 
 sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissions/new* |sort|uniq > usermap
 
-~/xidel '<empty/>' -e '
+export jsontaskresults
+
+~/xidel '<empty/>' --variable jsontaskresults -e '
   $usermap := {| file:read-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
-  $tasks := {"74976": "maximum_bench", "75102": "prefix_bench", "75433": "pj_bench", "74978": "sort_bench", "76750": "lenz_bench", "0": "lr_bench"}'\
+  $tasks := jn:parse-json($jsontaskresults)'\
         --variable 'user,pass'  \
         'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})'  \
         '<empty/>' -f '$tasks()[. ne "0"] ! x"https://moodle.uni-luebeck.de/course/modedit.php?update={.}&return=0&sr=0"' \
@@ -29,7 +32,7 @@ sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissio
             }</tr> 
      order by number($res/td[last()] ) descending return $res
    )}   </table> </p>) }) '  \
-         'https://moodle.uni-luebeck.de/course/modedit.php?update=75003&return=0&sr=0' \
+         'https://moodle.uni-luebeck.de/course/modedit.php?update='$failedresult'&return=0&sr=0' \
          -f 'xquery version "3.0-xidel"; form((//form)[1], {"introeditor[text]": join(("<h3>Hall of Fail</h3><p>Fehlgeschlagene Programme:</p>",
      let $task := "failed"
      for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) [normalize-space()]

@@ -2,12 +2,16 @@
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 
-mkdir -p pastsubmissions
+mkdir -p pastsubmissions/files
 while true; do
   if [[ -z "$( who  | grep -Ev 'root' | grep -Ev 'benitovanderzand +pts/3'|grep xxx)" ]]; then 
-     exercise=75103,74977,74979,75434,76751 $DIR/getsubmissions.sh
+     source "$DIR/config.sh"
+     export exercise
+     $DIR/getsubmissions.sh
      for submission in submissions/files/*; do
-       if diff -q $submission/*.c  past$submission/*.c ; then echo $submission already processed; rm -rf $submission; fi
+#echo diff -q $submission/*.c  past$submission/*.c
+       cfile="$submission/*.c"
+       if diff -q "$cfile"  "past$cfile" ; then echo $submission already processed; rm -rf $submission; fi
      done
 
      $DIR/grader.sh 
@@ -17,8 +21,8 @@ while true; do
        cp resulthashs oldresulthashs
      fi
      
-     cp -r submissions/files/* pastsubmissions/files
-     rm -rf submissions/files/*
+#     cp -r submissions/files/* pastsubmissions/files
+#     rm -rf submissions/files/*
   else  echo too many people ;
   fi
   sleep 3600;
