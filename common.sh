@@ -3,9 +3,9 @@ MOODLEDIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pw
 
 
 
-if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); fi
+if [[ -z "$user" ]]; then export user=$(cat ~/.moodleuser); chmod go-rwx ~/.moodleuser; fi
 if [[ -z "$user" ]]; then echo Need moodle \$user; exit; fi
-if [[ -z "$pass" ]]; then export pass=$(cat ~/.moodlepass); fi
+if [[ -z "$pass" ]]; then export pass=$(cat ~/.moodlepass); chmod go-rwx ~/.moodlepass; fi
 if [[ -z "$pass" ]]; then echo "Enter password for $user"; read -r pass; fi
 export user
 export pass
@@ -19,7 +19,7 @@ function moodle {
     $xidel --variable user,pass,baseurl [ "$baseurl" -f 'form(//form, {"username": $user, "password": $pass})' -e '()' --save-cookies ~/.moodlecookies ] 
     moodle "$@"
   fi
-
+  chmod go-rwx ~/.moodlecookies;
 }
 
 function moodlewithcourse {
