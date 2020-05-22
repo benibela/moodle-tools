@@ -21,11 +21,38 @@ declare function latex:command-from-lines($lines, $commandname){
 };
 
 declare function latex:comma-list-from-lines($lines, $commandname){
-  tokenize(join(latex:command-from-lines($lines, $commandname)), ",")!normalize-space()
+  tokenize(join(latex:command-from-lines($lines, $commandname)), ",")!normalize-space()[.]
 };
 
 declare function latex:till-lecture-title-from-lines($lines){
   ($lines[contains(., "\lecturewithid")]!extract(., ".*[\\].*\{.*\}\{(.*)\}\{.*\}.*", 1))[1]
 };
+
+declare function latex:plaintext-from-lecture-slides($lines){
+  $lines ! (
+    . 
+    => replace("\\item", "*")
+    => replace("\\(begin|end)\{[a-zA-Z0-9 ]+\}(\[[^\]]+\])?|\\\\|\\[a-zA-Z]+(<[a-zA-Z0-9]+>)?|~", "")
+    => replace("\{|\}|\$", "")
+  )
+};
+  
+declare function latex:sections-from-lecture-slides($lines){
+  let $frames-and-sections := $lines[matches(., "\\(sub)?section|\\begin\{[a-zA-Z0-9 ]*frame|\\(begin|end)\{learning targets")]
+  (:in till's lectures learnings count twice because they also insert TOC:)
+  
+  for tumbling window $frames-and-subsections in $frames-and-sections start when true() end next $e when contains($e, "\section") 
+  let $head := head($frames-and-subsections)[contains(., "\section")]
+  let $section := string($head) => replace("\\section\{|\}", "")
+  let $frames-and-subsections := if (exists($head)) then tail($frames-and-subsections) else $frames-and-subsections
+  
+  for tumbling window $frames in $frames-and-subsections start when true() end next $e when contains($e, "\subsection") 
+  let $head := head($frames)[contains(., "\subsection")]
+  let $subsection := string($head) => replace("\\subsection\{|\}", "")
+  let $frames := if (exists($head)) then tail($frames) else $frames
+    
+  return $frames ! ([ $section, $subsection, . ])
+};
+
 
 (:!extract(., "=([^,}]+)", 1)[.]:)
