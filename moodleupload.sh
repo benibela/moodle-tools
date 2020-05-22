@@ -49,6 +49,7 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
   $sumpoints := sum( $creditlines ! tokenize(., "[a-zA-Z ]+") [.] ! number()),
   $minpoints := sum( $creditlines ! (tokenize(., "[a-zA-Z ]+") [.] [1]) ! number()) idiv 2,
   $additionalUploads := extract($sheet, "% *Moodle upload (.*)", 1, "*"),
+  $team-submission := $option("team-submission", ())[. = ("true", "1")]!"1",
   $vpls := extract($sheet, "% *Moodle vpl (.*)", 1, "*")
   '  \
    'https://moodle.uni-luebeck.de/' -f 'form((//form)[1], {"username": $user, "password": $pass})' \
@@ -73,9 +74,16 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
      "gradepass": $minpoints,
      "gradingduedate[enabled]": "",
      "allowsubmissionsfromdate[enabled]": "", (:either set a date or disable it, otherwise there are problems with duedate < default allowsubmissionfromdate:)
-     "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else ""}
+     "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else "",
+     "teamsubmission" ?: $team-submission
+     }
    }[$make-assignment],
-   {"vpls": array{$vpls!{"filename": file:resolve-path(.)}}}
+   {"vpls": array{$vpls!{
+     "filename": file:resolve-path(.),
+     "assignment-options": {
+       "worktype" ?: $team-submission
+     }
+   }}}
    ), {"duplicates": "combine"})
   ')
 
@@ -87,6 +95,7 @@ echo "parameters end"
 
 
 
+#exit
 
 export course=$($xidel - -e '?course' <<<"$uploads")
 export section=$($xidel - -e '?section' <<<"$uploads")
@@ -94,7 +103,7 @@ export DIR
 export folderid=""
 eval "$($xidel - --variable DIR -e '?uploads?*!x"'"name='{?name}' description='{?description}' {\$DIR}/upload.sh '{?filename}'"'"' <<<"$uploads")"
 export id=""
-eval "$($xidel - --variable DIR -e 'let $title := ?title return ?vpls?*!x"'"name='{\$title}' {\$DIR}/setupvpl.sh '{?filename}'"'"' <<<"$uploads")"
+eval "$($xidel - --variable DIR -e 'let $title := ?title return ?vpls?*!x"'"name='{\$title}' {\$DIR}/setupvpl.sh '{?filename}'  '{serialize-json(?assignment-options)}' "'"' <<<"$uploads")"
 $xidel - -e '?assignment' <<<"$uploads" | $DIR/makeassignment.sh
 
 
