@@ -6,6 +6,7 @@
 #   name
 #   description
 #   $1            -> filename
+#   $2            -> additional assignment options
 
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"

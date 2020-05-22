@@ -1,7 +1,15 @@
 #!/bin/bash
+#Post message STDIN to forum $1
+#$1 is the forum post id not the id from the forum view url. (look at the hidden input with name "forum" in the form code of the forum)
+#options: 
+#  $2             -> subject
+#  $3             -> additional options (url encoded or JSON)
+#  messageformat
+
+
+
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
-#Call it with message.sh forum id < text to post text. first line is title
 
 export forum=$1
 export subject=$2
