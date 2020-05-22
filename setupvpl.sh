@@ -11,6 +11,7 @@ DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 
 configfile=$1
+assignmentoptions="$2"
 
 export id
 export configfile
@@ -24,14 +25,16 @@ if [[ -z "$id" ]]; then
   eval "$($xidel --output-format bash --variable configfile -e 'let $config := doc("file:///"||$configfile) return $config!($defaulttitle := /vpl/@name, $defaultpoints := /vpl/@points)')"
   export defaulttitle
   export defaultpoints
+  export assignmentoptions
   #echo $defaulttitle ::: $defaultpoints
-  moodle --variable course,section,name,description,points,configfile,defaulttitle,defaultpoints \
+  moodle --variable course,section,name,description,points,configfile,defaulttitle,defaultpoints,assignmentoptions --verbose \
     [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=vpl&type=&course={$course}&section={$section}&return=0&sr=0' \
-     -f 'head(//form)/form(., ({
+     -f 'head(//form)/moodle:form(., moodle:prepend-uri-options($assignmentoptions, {
        "name": $name || " " || $defaulttitle, 
        "introeditor[text]": $description, 
        "duedate[enabled]": "",
-       "grade[modgrade_point]": ($points,$defaultpoints,"100")[.][1] }, .//input[@name="submitbutton"]))' -e '()' ]
+       "grade[modgrade_point]": ($points,$defaultpoints,"100")[.][1] })
+       )' -e '()' ]
        #
        #
        #"duedate[day]": $sdeadline[1], 
@@ -41,7 +44,7 @@ if [[ -z "$id" ]]; then
        #
        #
        #
-  export id=$(moodle --variable name,defaulttitle 'https://moodle.uni-luebeck.de/course/view.php?id='$course -e 'max(css("li.vpl")//a[contains(@href, "view.php") and starts-with(normalize-space(),  $name || " " || $defaulttitle)]/request-decode(@href)?params?id)')
+  export id=$(moodle --variable name,defaulttitle 'https://moodle.uni-luebeck.de/course/view.php?id='$course'&section='$section -e 'max(css("li.vpl")//a[contains(@href, "view.php") and starts-with(normalize-space(),  $name || " " || $defaulttitle)]/request-decode(@href)?params?id)')
 fi
 
 
@@ -54,7 +57,7 @@ $xidel --variable user,pass,id,configfile --extract-exclude=config --verbose -e 
   $serialize-files := function($f) { serialize-json({"files": array{ $f!{"name": @name!string(), "contents": string(), "encoding": 0} } }) } 
   ' \
   'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' \
-  'https://moodle.uni-luebeck.de/mod/vpl/forms/executionoptions.php?id={$id}' -f '//form/form(., ({
+  'https://moodle.uni-luebeck.de/mod/vpl/forms/executionoptions.php?id={$id}' -f '//form[contains(@action, "executionoptions.php")]/form(., ({
     "basedon": head(.//option[. = $basedon]/@value),
     "run": 1,
     "debug": 1,
