@@ -1,16 +1,15 @@
 #!/bin/bash
-
-
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 source "$DIR/config.sh"
 
-sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' submissions/old* submissions/new* |sort|uniq > usermap
+sed -Ee 's/([^§]*).*(gid=|files\/)([0-9]+).*/\3 \1/' $submissionspath/old* $submissionspath/new* |sort|uniq > $moodletmppath/usermap
 
 export jsontaskresults
 
-~/xidel '<empty/>' --variable jsontaskresults -e '
-  $usermap := {| file:read-text-lines("usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
+
+$xidel '<empty/>' --variable jsontaskresults,moodletmppath,resultpath -e '
+  $usermap := {| file:read-text-lines($moodletmppath||"usermap")[normalize-space()] ! {substring-before(.," "): substring-after(.," ") } |},
   $tasks := jn:parse-json($jsontaskresults)'\
         --variable 'user,pass'  \
         'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})'  \
@@ -18,15 +17,15 @@ export jsontaskresults
         -f 'xquery version "3.0-xidel"; let 
  $id := extract($url, "update=([0-9]+)", 1), 
  $task := $tasks($id) 
- where file:exists("./results/" || $task)
+ where file:exists($resultpath || $task)
  return 
  form((//form)[1], {"introeditor[text]": inner-xml(<p> <h3>Problem {$task}</h3> 
    <p>Die jeweils besten Speedups von neun Läufen auf Alan. </p>
    <table rules="all" style="text-align: right;" border="0">  { (
      <tr><td>Name</td> { (1 to 9) ! <td>{.}</td>  } <td>Median</td> </tr>,
      for $res in 
-     for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) 
-     let $results := file:read-text-lines("./results/"|| $task||"/"||$file)
+     for $file in file:list($resultpath || $task) ! tokenize(., $line-ending) 
+     let $results := file:read-text-lines($resultpath|| $task||"/"||$file)
      return <tr><td>{$usermap($file)}</td>{
                ($results, (for $r in $results order by number($r) return $r)[ 5 ]) ! <td>{.}</td>                
             }</tr> 
@@ -35,8 +34,8 @@ export jsontaskresults
          'https://moodle.uni-luebeck.de/course/modedit.php?update='$failedresult'&return=0&sr=0' \
          -f 'xquery version "3.0-xidel"; form((//form)[1], {"introeditor[text]": join(("<h3>Hall of Fail</h3><p>Fehlgeschlagene Programme:</p>",
      let $task := "failed"
-     for $file in file:list("./results/" || $task) ! tokenize(., $line-ending) [normalize-space()]
-     return ("<h4>", $usermap($file), "</h4><pre>", file:read-text("./results/"|| $task||"/"||$file),"</pre>")
+     for $file in file:list($resultpath || $task) ! tokenize(., $line-ending) [normalize-space()]
+     return ("<h4>", $usermap($file), "</h4><pre>", file:read-text($resultpath|| $task||"/"||$file),"</pre>")
    )) } )
         ' -e //title
     

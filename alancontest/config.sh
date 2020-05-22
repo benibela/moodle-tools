@@ -1,3 +1,23 @@
+#Paths
+
+if [[ -z "$moodlebasepath" ]]; then 
+  moodlebasepath=$HOME/contest/
+fi
+if [[ -z "$graderbasepath" ]]; then 
+  graderbasepath=$moodlebasepath/grader/
+fi
+
+#path for benchmarker.c  Makefile ...
+export contestfilespath=$moodlebasepath/files/
+#path to save downloaded files. THIS MUST BE $(pwd)/submissions when calling timer.sh (getsubmissions.sh uses that dir)
+export submissionspath=$moodlebasepath/submissions/
+export lockfile=$moodlebasepath/lockfile
+export moodletmppath=$moodlebasepath/tmp/
+
+export gradingpath=$graderbasepath/grading/
+export resultpath=$graderbasepath/result/
+export pastsubmissionspath=$graderbasepath/pastsubmissions/
+
 
 #Input
 
@@ -18,3 +38,5 @@ jsontaskresults='{"139208": "maximum_bench", "139206": "prefix_bench", "139210":
 #text field id for error messages
 
 failedresult=139215
+
+

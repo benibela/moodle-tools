@@ -1,29 +1,44 @@
 #!/bin/bash
+#Start the moodle download/upload processes
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
+source "$DIR/config.sh"
 
-mkdir -p pastsubmissions/files
+touch $lockfile
+chmod a+rwx $lockfile 
+exec 100>$lockfile 
+
+mkdir -p $graderbasepath
+chmod a+rwx $graderbasepath
+
+mkdir -p $submissionspath/files
+mkdir -p $moodletmppath
+cd $submissionspath/../
 while true; do
-  if [[ -z "$( who  | grep -Ev 'root' | grep -Ev 'benitovanderzand +pts/3'|grep xxx)" ]]; then 
+  if flock -w 3600 100; then 
      source "$DIR/config.sh"
      export exercise
      $DIR/getsubmissions.sh
-     for submission in submissions/files/*; do
-#echo diff -q $submission/*.c  past$submission/*.c
-       cfile="$submission/*.c"
-       if diff -q "$cfile"  "past$cfile" ; then echo $submission already processed; rm -rf $submission; fi
+     for submission in $submissionspath/files/*; do
+       for cfile in $submission/*.c; do
+         oldcfile=$pastsubmissionspath/${cfile#"$submissionspath"}
+         if diff -q "$cfile"  "$oldcfile" ; then 
+           echo $submission already processed; 
+           #rm "$cfile"
+           rm -rf "$submission"; 
+         fi
+       done
+       #rm -d "$submission"; 
      done
 
-     $DIR/grader.sh 
-     ( find ./results -type f   | sort | xargs sha1sum ) > resulthashs
-     if ! diff resulthashs oldresulthashs;  then
+     
+     ( find $resultpath -type f   | sort | xargs sha1sum ) > $moodletmppath/resulthashs
+     if ! diff $moodletmppath/resulthashs $moodletmppath/oldresulthashs;  then
        $DIR/results.sh;
-       cp resulthashs oldresulthashs
+       cp $moodletmppath/resulthashs $moodletmppath/oldresulthashs
      fi
      
-#     cp -r submissions/files/* pastsubmissions/files
-#     rm -rf submissions/files/*
-  else  echo too many people ;
+    flock -u 100
   fi
   sleep 3600;
 done
