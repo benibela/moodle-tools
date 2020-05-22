@@ -8,14 +8,14 @@ source "$DIR/common.sh"
 mkdir -p submissions/files
 
 
-~/xidel --variable user,pass 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' --save-cookies tmpsession
+#~/xidel --variable user,pass 'https://moodle.uni-luebeck.de/' -f 'form(//form, {"username": $user, "password": $pass})' --save-cookies tmpsession
 
 for exercise in $(~/xidel --variable exercise -e 'tokenize($exercise, ",")!normalize-space()'); do 
 
 touch submissions/old$exercise
 touch submissions/history$exercise
 
-~/xidel --load-cookies tmpsession \
+moodle \
    "https://moodle.uni-luebeck.de/mod/assign/view.php?id=$exercise&action=grading"  \
    -e 'let $table := css("table.generaltable"), $col := count(exactly-one($table/thead/tr/th[.//a[contains(@href, "timesubmitted")]])/preceding-sibling::th ) + 1 return $table/tbody/tr/td[$col][not(normalize-space(.) = ("", "-"))]!x"{normalize-space(join(..//a[contains(@href, "user/view")]))} § {.} § {let $file := ..//a/@href[contains(., "assignsubmission_file")] return if ($file) then $file else ..//a/@href[contains(., "onlinetext")] } "' | sort > submissions/new$exercise
 
