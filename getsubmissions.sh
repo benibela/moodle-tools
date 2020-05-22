@@ -32,10 +32,9 @@ cp submissions/new$exercise submissions/old$exercise
 
 
 
-~/xidel -e 'declare function local:url2dir($u) { "submissions/files/" || extract($url, "([0-9]+/[^/?]+)([?].*)?$", 1)} ;
+moodle -e 'declare function local:url2dir($u) { "submissions/files/" || extract($u, "([0-9]+/[^/?]+)([?].*)?$", 1)} ;
         $lines := unparsed-text-lines("submissions/active'$exercise'") ! extract(., "[^§]+$") ! normalize-space(),
-        $lines ! ( try { file:delete(local:url2dir(.), true()) } catch * {()})' \
-        --load-cookies tmpsession \
+        $lines ! ( try { file:delete(trace(local:url2dir(.), "submission file"), true()) } catch * {()})' \
         [ -f '$lines[contains(., "assignsubmission_file")] ' \
         --download  '{local:url2dir($url)}' ]	 \
         [ -f '$lines[contains(., "plugin=onlinetext")] ' \
