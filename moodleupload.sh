@@ -57,7 +57,10 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
     -e 'section := $option("section-index", (((//span[contains(@class, "accesshide") and contains(.,  "Aufgabe") and matches(.., "Übungsblatt|Exercise +sheet")])[last()]/following::li[contains(@class, "section")])[1]/extract(@id, "[0-9]+"), $snumber)[1])' \
     -e '()' \
   ]  -e 'map:merge((
-   {"section": $section, "title": $title, "course": $course},
+   {"section": $section, 
+    "section-assignment": $section + xs:integer($option("section-index-assignment-delta", 0)),
+    "title": $title, 
+    "course": $course},
    {"uploads": array{
       {"name": $title, "description": $description, "filename": $uploadFilename },
       $additionalUploads ! {"name": ., "filename": file:resolve-path(.) }
@@ -102,6 +105,8 @@ export section=$($xidel - -e '?section' <<<"$uploads")
 export DIR
 export folderid=""
 eval "$($xidel - --variable DIR -e '?uploads?*!x"'"name='{?name}' description='{?description}' {\$DIR}/upload.sh '{?filename}'"'"' <<<"$uploads")"
+
+export section=$($xidel - -e '?section-assignment' <<<"$uploads")
 export id=""
 eval "$($xidel - --variable DIR -e 'let $title := ?title return ?vpls?*!x"'"name='{\$title}' {\$DIR}/setupvpl.sh '{?filename}'  '{serialize-json(?assignment-options)}' "'"' <<<"$uploads")"
 $xidel - -e '?assignment' <<<"$uploads" | $DIR/makeassignment.sh
