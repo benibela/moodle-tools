@@ -35,14 +35,15 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
   $make-assignment := $option("make-assignment", contains($sheet, "\usepackage{tcs-exercise}") or contains($sheet, "\begin{homework}") or contains($sheet, "\begin{classroom exercises}")) cast as xs:boolean, 
   $uploadFilename := $option("file-to-upload", replace($url, "[.]tex", ".pdf")), 
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
+  $slang-is-english := tokenize($slang, ",") = "english",
   $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
   $texdeadline := local:tex-replace(  extract($sheet, "insertdeadline\{(.*)\}", 1 )  , $tex-defs, 100), 
   $sdeadline := if (not($make-assignment)) then "" 
                 else if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
                 else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")),  
-  $title := $option("title", if ($slang eq "english") then x"Exercise sheet {$snumber}" else x"Übungsblatt {$snumber}"), 
+  $title := $option("title", if ($slang-is-english) then x"Exercise sheet {$snumber}" else x"Übungsblatt {$snumber}"), 
   $description := $option("description", $title),
-  $assignmenttitle := $title  || (if ($allow-file-upload) then "" else if ($slang eq "english") then " (results)" else " (Ergebnisse)"), 
+  $assignmenttitle := $title  || (if ($allow-file-upload) then "" else if ($slang-is-english) then " (results)" else " (Ergebnisse)"), 
   $sheetlines := tokenize(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") 
                              else $sheet, $line-ending),
   $creditlines := $sheetlines ! extract(., "^[^%]*credits=([^\],%]*)", 1)[.],
@@ -78,6 +79,7 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
      "gradingduedate[enabled]": "",
      "allowsubmissionsfromdate[enabled]": "", (:either set a date or disable it, otherwise there are problems with duedate < default allowsubmissionfromdate:)
      "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else "",
+     "assignfeedback_file_enabled" ?: if ($allow-file-upload) then "1" else (),
      "teamsubmission" ?: $team-submission
      }
    }[$make-assignment],
@@ -112,30 +114,3 @@ eval "$($xidel - --variable DIR -e 'let $title := ?title return ?vpls?*!x"'"name
 $xidel - -e '?assignment' <<<"$uploads" | $DIR/makeassignment.sh
 
 
-  exit
-  
-  [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=resource&type=&course={$course}&section={$section}&return=0&sr=0' \
-      -e 'infoForm := form(//form[contains(@action, "modedit")], {"name": $title, "introeditor[text]": $description})' \
-      -f '//noscript//object/@data[contains(., "env=filemanager")]' \
-      -f '//a/@href[contains(., "filepicker")]'  \
-      -f '//a[contains(., "hochladen")]'  \
-      -f 'form(//form, {"repo_upload_file": {"file": $uploadFilename}})' \
-      -f '//a/@href[not(starts-with(., "#"))]' \
-      -f '$infoForm' \
-      -e 'css("p.activity")[last()]' ] \
-  [ 'https://moodle.uni-luebeck.de/course/modedit.php?add=assign&type=&course={$course}&section={$section}&return=0&sr=0' \
-     -f 'form((//form)[1], {
-       "name": $assignmenttitle, 
-       "introeditor[text]": $assignmenttitle, 
-       "duedate[day]": $sdeadline[1], 
-       "duedate[month]": $sdeadline[2], 
-       "duedate[year]": $sdeadline[3], 
-       "duedate[hour]":  $hour, 
-       "grade[modgrade_point]": $spoints, 
-       "gradingduedate[enabled]": 0,
-       "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else ""})[$make-assignment]' \
-     -e 'css("span.instancename") [contains(., string($snumber))]' -e 'span.error' ]
-
- 
-    -f 'form((//form)[1], "edit=on")' \
-    -f 'css("div.activityinstance")[contains(a/@href, "view.php") and .//text()/normalize-space() = $title]/..//a[matches(@href, "mod[.]php.*hide")]'\
