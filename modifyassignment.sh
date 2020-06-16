@@ -72,9 +72,9 @@ grep "^\s*http"   <<<"$input" | sed -Ee 's:mod/(vpl|assign)/view.php\?id=:course
           else {$key:$value}
       })
     )
-    ' -e '//title' -e 'span.error'
-    #-e //title
-
+    ' -e '//title' -e 'span.error' -e '//*[contains(@id, "error")]!normalize-space()[.]' 
+    
+    #--download /tmp/test.html
 done
 
 exit
