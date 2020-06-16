@@ -74,8 +74,13 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
      "duedate[month]": $sdeadline[2], 
      "duedate[year]": $sdeadline[3], 
      "duedate[hour]":  $hour, 
-     "grade[modgrade_point]": $sumpoints, 
-     "gradepass": $minpoints,
+
+     "grade[modgrade_point]" ?: $sumpoints[. > 0],
+     "gradepass" ?: $minpoints[. > 0],
+
+     "grade[modgrade_type]" ?: "scale"[$sumpoints = 0],
+     "grade[modgrade_scale]" ?: "8"[$sumpoints = 0],
+     
      "gradingduedate[enabled]": "",
      "allowsubmissionsfromdate[enabled]": "", (:either set a date or disable it, otherwise there are problems with duedate < default allowsubmissionfromdate:)
      "assignsubmission_file_enabled": if ($allow-file-upload) then "1" else "",
