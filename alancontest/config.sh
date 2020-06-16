@@ -23,7 +23,8 @@ export pastsubmissionspath=$graderbasepath/pastsubmissions/
 
 #assignment ids separated by commas (e.g. exercise=139207,139209,139211)
 
-exercise=139207,139209,139211,140430,140435,140432,140434
+exercise=182294,182296,182298
+#,140430,140435,140432,140434
 
 
 
