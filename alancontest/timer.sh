@@ -35,7 +35,12 @@ while true; do
      ( find $resultpath -type f   | sort | xargs sha1sum ) > $moodletmppath/resulthashs
      if ! diff $moodletmppath/resulthashs $moodletmppath/oldresulthashs;  then
        $DIR/results.sh;
+       ( find $resultpath/failed -type f   | sort | xargs sha1sum ) > $moodletmppath/resultfailedhashs
+       if ! diff $moodletmppath/resultfailedhashs $moodletmppath/oldresultfailedhashs;  then
+         $DIR/submission-feedback.sh
+       fi
        cp $moodletmppath/resulthashs $moodletmppath/oldresulthashs
+       cp $moodletmppath/resultfailedhashs $moodletmppath/oldresultfailedhashs
      fi
      
     flock -u 100
