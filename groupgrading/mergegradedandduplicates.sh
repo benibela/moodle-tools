@@ -13,3 +13,5 @@ xidel --xquery 'file:create-dir("merged"),
                         where $group = $group2 
                         return file:copy($h, "merged/" || $d))'
 
+rm merged.zip 2>/dev/null
+zip merged.zip -r merged
