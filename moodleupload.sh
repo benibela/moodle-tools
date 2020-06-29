@@ -1,8 +1,32 @@
 #!/bin/bash
+#Upload a (TCS) exercise sheet given as tex file to the moodle course and create assignment/VPLs
+#Input as environment variable
+#  $1        tex file (if absent use random tex file from current directory)
+#  course    (if absent read from tex file)
+
+# all included tex files (\input) and the lecture config are searched for options in the format % Moodle optionName = optionValue:
+# course              the course 
+# make-assignment     if it should create an assignment for submission or grading
+# hour                hour the assignment is due
+#                     (due date is read from \insertdeadline or semester-dates.xml lecture config)
+# allow-file-upload   if a file can be submitted to the assignment
+# file-to-upload      uploaded file (default: pdf associated with the tex)
+# lang                english or german
+# title               (default: "exercise sheet", number read from insertsheetnumber)
+# description         (default: $title)
+# team-submission     allow group submission
+# section-index       section of the course the file is uploaded to
+# section-index-assignment-delta  create the assignment in section $section-index + $section-index-assignment-delta
+#
+# additional special options read form the tex:
+# assignment points and passing points:  read from begin{homework}[credits=...] environments
+# additional files to upload: % Moodle upload
+# VPLs to create: % Moodle vpl
 
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 
+#find tex file to process for uploading
 if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"
 fi
