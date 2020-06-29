@@ -7,7 +7,22 @@ if [[ -z "$1" ]]; then texfile=$( (ls *.sheet; ls *.tex) | sort | tail -1)
 else texfile="$1"
 fi
 
-uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxxxnone --xquery '
+#search lecture config directory
+texfiledir="$( cd "$( dirname -- "$(readlink -f -- "$texfile")" )" && pwd )"
+configdir=""
+if [[ -e "$texfiledir/../config" ]]; then configdir="$texfiledir/../config";
+elif [[ -e "$texfiledir/../../config" ]]; then configdir="$texfiledir/../../config";
+elif [[ -e "$texfiledir/../../../config" ]]; then configdir="$texfiledir/../../../config";
+fi
+#echo $texfiledir
+#echo $configdir
+if [[ -e $configdir/xml-dates.sh && -e $configdir/semester-dates.tex ]]; then
+  #update xml dates if necessary
+  [ $configdir/semester-dates.xml -nt $configdir/semester-dates.tex ] || ( cd $configdir; ./xml-dates.sh ) 
+fi
+export configdir
+
+uploads=$($xidel "$texfile" --variable 'course,user,pass,configdir' --extract-include xxxxxnone --xquery '
   declare function local:tex-replace($s, $commands, $cutoff) {
     let $cmd := extract($s, "\\([a-zA-Z]+)", (0, 1))
     return if ($cmd[1] and $cutoff > 0) then local:tex-replace(replace($s, $cmd[1], $commands($cmd[2]), "q"), $commands, $cutoff - 1)
@@ -19,6 +34,11 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
                    ("../config", "../../config/", "../../../config", "../", "../../", "../../../")!resolve-uri(. || "lecture-config.tex", $url)[file:exists(.)][1]
                   else () )
                 ) ! file:read-text(.),
+
+  $exercise-id := extract($sheet, "exercisewithid\{(.*)\}", 1 ),
+  $semester-dates := if ($exercise-id and file:exists($configdir || "/semester-dates.xml")) then doc($configdir || "/semester-dates.xml") else (),
+  $exercise-info := $semester-dates//exercise[@id = $exercise-id],
+
   $tex-defs := {},  
   for tumbling window $cmd in ($includes, $sheet) ! extract ( .,  "\\def\\([^{]+)\{(.*)\}", (1,2) , "*") start at $i when true() end at $j when $j - $i > 0 return
     $tex-defs($cmd[1]) := local:tex-replace($cmd[2], $tex-defs, 100),
@@ -36,11 +56,17 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass' --extract-include xxxx
   $uploadFilename := $option("file-to-upload", replace($url, "[.]tex", ".pdf")), 
   $slang := $option("lang", extract($sheet, "class\[(.*)\]\{article", 1)), 
   $slang-is-english := tokenize($slang, ",") = "english",
-  $snumber := extract($sheet, "insertsheetnumber\{(.*)\}", 1), 
-  $texdeadline := local:tex-replace(  extract($sheet, "insertdeadline\{(.*)\}", 1 )  , $tex-defs, 100), 
+  $snumber := (extract($sheet, "insertsheetnumber\{(.*)\}", 1), $exercise-info/@index/string())[.][1], 
   $sdeadline := if (not($make-assignment)) then "" 
-                else if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
-                else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")),  
+                else let $sdeadline := (
+                  let $texdeadline := extract($sheet, "insertdeadline\{(.*)\}", 1 )
+                  where $texdeadline 
+                  let $texdeadline := local:tex-replace($texdeadline, $tex-defs, 100) 
+                  return if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
+                         else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")))
+                  return 
+                  if ($sdeadline) then $sdeadline 
+                  else reverse(tokenize(exactly-one($exercise-info/@due), "-")),
   $title := $option("title", if ($slang-is-english) then x"Exercise sheet {$snumber}" else x"Übungsblatt {$snumber}"), 
   $description := $option("description", $title),
   $assignmenttitle := $title  || (if ($allow-file-upload) then "" else if ($slang-is-english) then " (results)" else " (Ergebnisse)"), 
