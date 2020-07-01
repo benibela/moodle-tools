@@ -1,4 +1,9 @@
 #!/bin/bash
+# Hides some activities
+# Input as environment variables and parameters
+#   course
+#   $1      title of activities to hide
+
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 

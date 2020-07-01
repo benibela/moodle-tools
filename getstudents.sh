@@ -1,4 +1,8 @@
 #!/bin/bash
+# Downloads the list of students from a course
+# Input as environment variable
+#   course
+
 #DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DIR=~/moodle
 source $DIR/common.sh

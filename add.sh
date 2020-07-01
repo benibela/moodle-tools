@@ -1,14 +1,14 @@
 #!/bin/bash
-# Add something to a moodle course
+# Adds something to a moodle course
 # Input as environment variables and parameters
 #   course
 #   section
 #   name
-#   description
-#   descriptionformat
-#   $1            -> the thing to add
-#                    e.g. label, url, page, etherpadlite, moodleoverflow
-#   $2            -> additional options (url encoded or JSON)
+#   description       -> long description
+#   descriptionformat -> format as you can choose in the Moodle: html, moodle, markdown, text
+#   $1                -> the thing to add
+#                        e.g. label, url, page, etherpadlite, moodleoverflow
+#   $2                -> additional options (url encoded or JSON)
 
 thingtoadd=$1
 options=$2

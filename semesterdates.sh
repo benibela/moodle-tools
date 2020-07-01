@@ -1,4 +1,7 @@
 #!/bin/bash
+# Reads the start and end dates for the semesters of this year from the university of Lübeck webpage.
+# Also reads holidays.
+
 cache=~/semesterdatescache
 
 if [[ -z $xidel ]]; then xidel=~/xidel; fi

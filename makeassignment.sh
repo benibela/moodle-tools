@@ -1,4 +1,5 @@
 #!/bin/bash
+#Makes an assignment
 #Input:
 #  environment variables:
 #     course

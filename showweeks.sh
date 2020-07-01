@@ -1,4 +1,9 @@
 #!/bin/bash
+# Shows the title of the weeks in a course
+# Input as environment variables and parameters
+#    course
+#    $1     start week
+#    $2     end week
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 

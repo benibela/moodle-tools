@@ -1,4 +1,6 @@
 #!/bin/bash
+#Message login data to multiple people
+
 DIR=~/moodle
 source $DIR/common.sh
 

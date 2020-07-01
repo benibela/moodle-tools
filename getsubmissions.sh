@@ -1,4 +1,8 @@
 #!/bin/bash
+# Downloads submissions from an assignment
+# Input as environment variables
+#   exercise      Assignment id
+#
 #Im Moodle muss die Zahl der angezeigten Abgaben auf 100 gesetzt werden (oder die Zahl der Studenten), da nur die erste Seite heruntergeladen wird.
 if [[ -z "$exercise" ]]; then echo "you need to set an exercise (id from exercise grading view)";exit;fi
 

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Removes the duedate from an exercise with id $exercise
+
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 

@@ -1,4 +1,6 @@
 
+#Loads the moodle configuration, user and password, xidel path. Used internally by every other script
+
 MOODLEDIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 
 

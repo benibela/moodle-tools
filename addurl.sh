@@ -4,8 +4,8 @@
 #   course
 #   section
 #   name
-#   description
-#   descriptionformat
+#   description   -> long description
+#   descriptionformat -> format as you can choose in the Moodle: html, moodle, markdown, text
 #   $1            -> link target
 #   $2            -> additional options (url encoded or JSON)
 

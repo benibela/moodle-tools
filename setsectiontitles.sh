@@ -1,4 +1,9 @@
 #!/bin/sh
+# Sets the titles of the sections of a course.
+# Input as environment variables and parameters
+#   course
+#   section  Starting section (default 1)
+#   stdin    New titles 
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 

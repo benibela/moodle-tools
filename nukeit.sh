@@ -1,4 +1,6 @@
 #!/bin/bash
+# Deletes everything from a course
+#   course
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 

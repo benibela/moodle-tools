@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #Input on stdin
 #
 #  keys to change  (in JSON/XQuery, without surrounding {})
