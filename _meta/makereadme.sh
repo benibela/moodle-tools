@@ -28,6 +28,8 @@ You only need bash and Xidel >= 0.9.9 installed.
 
 The scripts can then be called without installation.
 
+Xidel is searched as `~/xidel`. You can edit `common.sh` to adjust this and other configuration.
+
 ## Available scripts
 
 ' > README.md
