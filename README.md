@@ -13,7 +13,7 @@ Almost all scripts take these environment variables as input:
 
 Upload file "exercises.pdf" with title "Exercise Sheet":
 
-    name=Exercise Sheet description=Exercise Sheet ./upload.sh exercises.pdf
+    name="Exercise Sheet" description="Exercise Sheet" ./upload.sh exercises.pdf
 
 Create a heading in a course:
 
