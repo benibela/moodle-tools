@@ -18,7 +18,7 @@ moodlewithcourse 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' \
              let $maxpoints := $p("grade[modgrade_point]")
              let $okpoints := $p("gradepass")
              return
-               x" min(round([[{$id}]] / {$okpoints}); 1) " 
+               x" min(floor([[{$id}]] / {$okpoints}); 1) " 
 ' | $xidel - --xquery '
   let $lines := x:lines($raw)[contains(., "min")]   
   let $allowedtofail := 2
