@@ -9,8 +9,28 @@ Almost all scripts take these environment variables as input:
     user     Username
     pass     Password
 
+## Examples
 
-## add.sh
+Upload file "exercises.pdf" with title "Exercise Sheet":
+
+    name=Exercise Sheet description=Exercise Sheet ./upload.sh exercises.pdf
+
+Create a heading in a course:
+
+    description="<h5>Some heading text</h5>" descriptionformat=html ./add.sh label showdescription=1
+
+The examples assume the above environment variables have been set, so it knows in which course the content should be created.
+
+## Installation
+
+You only need bash and Xidel >= 0.9.9 installed. 
+
+The scripts can then be called without installation.
+
+## Available scripts
+
+
+### add.sh
 
  Adds something to a moodle course
 
@@ -25,7 +45,7 @@ Almost all scripts take these environment variables as input:
        $2                -> additional options (url encoded or JSON)
 
 
-## addurl.sh
+### addurl.sh
 
  Adds a link to $1
 
@@ -39,13 +59,13 @@ Almost all scripts take these environment variables as input:
        $2            -> additional options (url encoded or JSON)
 
 
-## common.sh
+### common.sh
 
 Loads the moodle configuration, user and password, xidel path. Used internally by every other script
 
 
 
-## forumpost.sh
+### forumpost.sh
 
 Post message STDIN to forum $1
 
@@ -56,7 +76,7 @@ Post message STDIN to forum $1
       messageformat
 
 
-## getstudents.sh
+### getstudents.sh
 
  Downloads the list of students from a course
 
@@ -64,7 +84,7 @@ Post message STDIN to forum $1
        course
 
 
-## getsubmissions.sh
+### getsubmissions.sh
 
  Downloads submissions from an assignment
 
@@ -74,7 +94,7 @@ Post message STDIN to forum $1
     Im Moodle muss die Zahl der angezeigten Abgaben auf 100 gesetzt werden (oder die Zahl der Studenten), da nur die erste Seite heruntergeladen wird.
 
 
-## groupgrading/mergegradedandduplicates.sh
+### groupgrading/mergegradedandduplicates.sh
 
 Create a "merged" subdirectory containing:
 
@@ -82,13 +102,13 @@ Create a "merged" subdirectory containing:
       all files removed by moveduplicates.sh, but replaced by the file that has replaced the duplicate in the current dir (assuming all duplicates are named GROUP...-). 
 
 
-## groupgrading/moveduplicates.sh
+### groupgrading/moveduplicates.sh
 
 Move duplicated files in the current directory to a "duplicates" subdirectory
 
 
 
-## hideactivities.sh
+### hideactivities.sh
 
  Hides some activities
 
@@ -97,7 +117,7 @@ Move duplicated files in the current directory to a "duplicates" subdirectory
        $1      title of activities to hide
 
 
-## hideslides.sh
+### hideslides.sh
 
  Hides activities with caption "Vorlesungsfolien"
 
@@ -105,7 +125,7 @@ Move duplicated files in the current directory to a "duplicates" subdirectory
        course
 
 
-## hideweeks.sh
+### hideweeks.sh
 
  Hides week section
 
@@ -114,7 +134,7 @@ Move duplicated files in the current directory to a "duplicates" subdirectory
        $1 to  $2    section numbers to hide
 
 
-## makeassignment.sh
+### makeassignment.sh
 
 Makes an assignment
 
@@ -127,7 +147,7 @@ Makes an assignment
          (see modifyassignment)
 
 
-## makeformula.sh
+### makeformula.sh
 
  Create a grading formula for a course. Condition: pass if at most two exercise assignments were failed.
 
@@ -135,19 +155,19 @@ Makes an assignment
        course
 
 
-## message.sh
+### message.sh
 
 Call it with message.sh userid "message" to send a message to someone
 
 
 
-## messagelogins.sh
+### messagelogins.sh
 
 Message login data to multiple people
 
 
 
-## modifyassignment.sh
+### modifyassignment.sh
 
 Input on stdin
 
@@ -180,7 +200,7 @@ Input on stdin
     ----------------------
 
 
-## moodleupload.sh
+### moodleupload.sh
 
 Upload a (TCS) exercise sheet given as tex file to the moodle course and create assignment/VPLs
 
@@ -189,27 +209,27 @@ Upload a (TCS) exercise sheet given as tex file to the moodle course and create 
       course    (if absent read from tex file)
 
 
-## nukeit.sh
+### nukeit.sh
 
  Deletes everything from a course
 
        course
 
 
-## removeduedate.sh
+### removeduedate.sh
 
  Removes the duedate from an exercise with id $exercise
 
 
 
-## semesterdates.sh
+### semesterdates.sh
 
  Reads the start and end dates for the semesters of this year from the university of Lübeck webpage.
 
      Also reads holidays.
 
 
-## setsectioninfo.sh
+### setsectioninfo.sh
 
  Sets text of section $section
 
@@ -221,7 +241,7 @@ Upload a (TCS) exercise sheet given as tex file to the moodle course and create 
        descriptionformat
 
 
-## setsectiontitles.sh
+### setsectiontitles.sh
 
  Sets the titles of the sections of a course.
 
@@ -231,7 +251,7 @@ Upload a (TCS) exercise sheet given as tex file to the moodle course and create 
        stdin    New titles 
 
 
-## setupvpl.sh
+### setupvpl.sh
 
  Creates or changes a VPL. 
 
@@ -244,7 +264,7 @@ Upload a (TCS) exercise sheet given as tex file to the moodle course and create 
        $2            -> additional assignment options
 
 
-## showweeks.sh
+### showweeks.sh
 
  Shows the title of the weeks in a course
 
@@ -254,7 +274,7 @@ Upload a (TCS) exercise sheet given as tex file to the moodle course and create 
         $2     end week
 
 
-## upload.sh
+### upload.sh
 
  Uploads a file to a moodle course. 
 

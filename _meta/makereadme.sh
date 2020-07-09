@@ -10,6 +10,26 @@ Almost all scripts take these environment variables as input:
     user     Username
     pass     Password
 
+## Examples
+
+Upload file "exercises.pdf" with title "Exercise Sheet":
+
+    name='Exercise Sheet' description='Exercise Sheet' ./upload.sh exercises.pdf
+
+Create a heading in a course:
+
+    description="<h5>Some heading text</h5>" descriptionformat=html ./add.sh label showdescription=1
+
+The examples assume the above environment variables have been set, so it knows in which course the content should be created.
+
+## Installation
+
+You only need bash and Xidel >= 0.9.9 installed. 
+
+The scripts can then be called without installation.
+
+## Available scripts
+
 ' > README.md
 
 xidel -s --xquery '
@@ -21,4 +41,4 @@ xidel -s --xquery '
                end next $n when not(starts-with($n, "#")) 
                return $w 
   let $info := $info ! replace(., "^ *#", "")
-  return ("## " || $fn, "", head($info), "", tail($info) ! ("    " || .), "","") ' >> README.md
+  return ("### " || $fn, "", head($info), "", tail($info) ! ("    " || .), "","") ' >> README.md
