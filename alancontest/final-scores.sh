@@ -2,7 +2,7 @@
 DIR="$( cd "$( dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")" )" && pwd )"
 source "$DIR/common.sh"
 
-moodlewithcourse 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' --xquery '
+moodlewithcourse 'https://moodle.uni-luebeck.de/course/view.php?id={$course}' -f 'moodle:course-edit-follow(/)' --xquery '
   let $winning-ranks := 2, 
       $scores := //p[starts-with(normalize-space(), "Die jeweils besten")]/../ ( 
         let $problem := h3[1], 
