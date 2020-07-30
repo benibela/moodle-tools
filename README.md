@@ -61,6 +61,14 @@ Xidel is searched as `~/xidel`. You can edit `common.sh` to adjust this and othe
        $2            -> additional options (url encoded or JSON)
 
 
+### choice-report.sh
+
+Print the results of a choice activity, sorted by first name (results in the moodle are unsorted)
+
+    Input:
+      $1       -> Id
+
+
 ### common.sh
 
 Loads the moodle configuration, user and password, xidel path. Used internally by every other script
