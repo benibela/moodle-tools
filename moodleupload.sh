@@ -46,7 +46,11 @@ if [[ -e $configdir/xml-dates.sh && -e $configdir/semester-dates.tex ]]; then
 fi
 export configdir
 
-uploads=$($xidel "$texfile" --variable 'course,user,pass,configdir' --extract-include xxxxxnone --xquery '
+#                            --module $DIR/latex.xqm
+uploads=$($xidel "$texfile" --variable 'course,user,pass,configdir' \
+                            --extract-include xxxxxnone \
+                            --trace-stack  \
+                            --xquery '
   declare function local:tex-replace($s, $commands, $cutoff) {
     let $cmd := extract($s, "\\([a-zA-Z]+)", (0, 1))
     return if ($cmd[1] and $cutoff > 0) then local:tex-replace(replace($s, $cmd[1], $commands($cmd[2]), "q"), $commands, $cutoff - 1)
@@ -84,18 +88,19 @@ uploads=$($xidel "$texfile" --variable 'course,user,pass,configdir' --extract-in
   $sdeadline := if (not($make-assignment)) then "" 
                 else let $sdeadline := (
                   let $texdeadline := extract($sheet, "insertdeadline\{(.*)\}", 1 )
+                                      => replace("[.]?\\,", " ")
                   where $texdeadline 
                   let $texdeadline := local:tex-replace($texdeadline, $tex-defs, 100) 
                   return if (contains($texdeadline, ",")) then tokenize($texdeadline, ",") ! extract(., "[0-9]*") 
                          else reverse(tokenize(xs:string(parse-date(normalize-space(replace($texdeadline, "[^0-9a-zA-Z]", " ")), "d mmmm yyyy" )), "-") ! extract(., "[1-9][0-9]*")))
                   return 
-                  if ($sdeadline) then $sdeadline 
+                  if (count($sdeadline) = 3) then $sdeadline 
                   else reverse(tokenize(exactly-one($exercise-info/@due), "-")),
   $title := $option("title", if ($slang-is-english) then x"Exercise sheet {$snumber}" else x"Übungsblatt {$snumber}"), 
   $description := $option("description", $title),
   $assignmenttitle := $title  || (if ($allow-file-upload) then "" else if ($slang-is-english) then " (results)" else " (Ergebnisse)"), 
-  $sheetlines := tokenize(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") 
-                             else $sheet, $line-ending),
+  $sheetlines := x:lines(if (contains($sheet, "begin{homework}")) then substring-after($sheet, "begin{homework}") 
+                             else $sheet),
   $creditlines := $sheetlines ! extract(., "^[^%]*credits=([^\],%]*)", 1)[.],
   $sumpoints := sum( $creditlines ! tokenize(., "[a-zA-Z ]+") [.] ! number()),
   $minpoints := sum( $creditlines ! (tokenize(., "[a-zA-Z ]+") [.] [1]) ! number()) idiv 2,
