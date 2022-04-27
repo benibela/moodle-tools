@@ -104,6 +104,17 @@ Post message STDIN to forum $1
     Im Moodle muss die Zahl der angezeigten Abgaben auf 100 gesetzt werden (oder die Zahl der Studenten), da nur die erste Seite heruntergeladen wird.
 
 
+### gradeupload.sh
+
+Sets the grade of a list of students
+
+    Input:
+      $course
+      $1       -> itemid from url
+      $2       -> grade
+      stdin    -> list of students (name or id=1234)
+
+
 ### groupgrading/mergegradedandduplicates.sh
 
 Create a "merged" subdirectory containing:
